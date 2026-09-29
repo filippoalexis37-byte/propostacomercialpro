@@ -38,7 +38,7 @@ function AuthPage() {
     if (mode === "in") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
-      if (error) return toast.error("E-mail ou senha inválidos");
+      if (error) { toast.error("E-mail ou senha inválidos"); return; }
       navigate({ to: "/dashboard" });
     } else {
       const { data, error } = await supabase.auth.signUp({
@@ -47,7 +47,7 @@ function AuthPage() {
         options: { data: { full_name: name }, emailRedirectTo: window.location.origin + "/dashboard" },
       });
       setLoading(false);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       if (data.session) navigate({ to: "/dashboard" });
       else toast.success("Conta criada! Confirme seu e-mail para entrar.");
     }

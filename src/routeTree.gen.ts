@@ -14,9 +14,16 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAtividadesRouteImport } from './routes/_authenticated/atividades'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedCombosRouteImport } from './routes/_authenticated/combos'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEmpresasRouteImport } from './routes/_authenticated/empresas'
+import { Route as AuthenticatedFollowupRouteImport } from './routes/_authenticated/followup'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
+import { Route as AuthenticatedNichosRouteImport } from './routes/_authenticated/nichos'
 import { Route as AuthenticatedObjecoesRouteImport } from './routes/_authenticated/objecoes'
+import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
+import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated/prompts'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
 
 const IndexRoute = IndexRouteImport.update({
@@ -43,9 +50,30 @@ const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCombosRoute = AuthenticatedCombosRouteImport.update({
+  id: '/combos',
+  path: '/combos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedEmpresasRoute = AuthenticatedEmpresasRouteImport.update({
   id: '/empresas',
   path: '/empresas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFollowupRoute = AuthenticatedFollowupRouteImport.update({
+  id: '/followup',
+  path: '/followup',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
@@ -53,9 +81,25 @@ const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNichosRoute = AuthenticatedNichosRouteImport.update({
+  id: '/nichos',
+  path: '/nichos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedObjecoesRoute = AuthenticatedObjecoesRouteImport.update({
   id: '/objecoes',
   path: '/objecoes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPrecificacaoRoute =
+  AuthenticatedPrecificacaoRouteImport.update({
+    id: '/precificacao',
+    path: '/precificacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPromptsRoute = AuthenticatedPromptsRouteImport.update({
+  id: '/prompts',
+  path: '/prompts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedServicosRoute = AuthenticatedServicosRouteImport.update({
@@ -69,9 +113,16 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/combos': typeof AuthenticatedCombosRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/empresas': typeof AuthenticatedEmpresasRoute
+  '/followup': typeof AuthenticatedFollowupRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/nichos': typeof AuthenticatedNichosRoute
   '/objecoes': typeof AuthenticatedObjecoesRoute
+  '/precificacao': typeof AuthenticatedPrecificacaoRoute
+  '/prompts': typeof AuthenticatedPromptsRoute
   '/servicos': typeof AuthenticatedServicosRoute
 }
 export interface FileRoutesByTo {
@@ -79,9 +130,16 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/combos': typeof AuthenticatedCombosRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/empresas': typeof AuthenticatedEmpresasRoute
+  '/followup': typeof AuthenticatedFollowupRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/nichos': typeof AuthenticatedNichosRoute
   '/objecoes': typeof AuthenticatedObjecoesRoute
+  '/precificacao': typeof AuthenticatedPrecificacaoRoute
+  '/prompts': typeof AuthenticatedPromptsRoute
   '/servicos': typeof AuthenticatedServicosRoute
 }
 export interface FileRoutesById {
@@ -91,9 +149,16 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/atividades': typeof AuthenticatedAtividadesRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
+  '/_authenticated/combos': typeof AuthenticatedCombosRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/empresas': typeof AuthenticatedEmpresasRoute
+  '/_authenticated/followup': typeof AuthenticatedFollowupRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
+  '/_authenticated/nichos': typeof AuthenticatedNichosRoute
   '/_authenticated/objecoes': typeof AuthenticatedObjecoesRoute
+  '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
+  '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
 }
 export interface FileRouteTypes {
@@ -103,9 +168,16 @@ export interface FileRouteTypes {
     | '/auth'
     | '/atividades'
     | '/clientes'
+    | '/combos'
+    | '/configuracoes'
+    | '/dashboard'
     | '/empresas'
+    | '/followup'
     | '/leads'
+    | '/nichos'
     | '/objecoes'
+    | '/precificacao'
+    | '/prompts'
     | '/servicos'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -113,9 +185,16 @@ export interface FileRouteTypes {
     | '/auth'
     | '/atividades'
     | '/clientes'
+    | '/combos'
+    | '/configuracoes'
+    | '/dashboard'
     | '/empresas'
+    | '/followup'
     | '/leads'
+    | '/nichos'
     | '/objecoes'
+    | '/precificacao'
+    | '/prompts'
     | '/servicos'
   id:
     | '__root__'
@@ -124,9 +203,16 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/atividades'
     | '/_authenticated/clientes'
+    | '/_authenticated/combos'
+    | '/_authenticated/configuracoes'
+    | '/_authenticated/dashboard'
     | '/_authenticated/empresas'
+    | '/_authenticated/followup'
     | '/_authenticated/leads'
+    | '/_authenticated/nichos'
     | '/_authenticated/objecoes'
+    | '/_authenticated/precificacao'
+    | '/_authenticated/prompts'
     | '/_authenticated/servicos'
   fileRoutesById: FileRoutesById
 }
@@ -173,11 +259,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/combos': {
+      id: '/_authenticated/combos'
+      path: '/combos'
+      fullPath: '/combos'
+      preLoaderRoute: typeof AuthenticatedCombosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/empresas': {
       id: '/_authenticated/empresas'
       path: '/empresas'
       fullPath: '/empresas'
       preLoaderRoute: typeof AuthenticatedEmpresasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/followup': {
+      id: '/_authenticated/followup'
+      path: '/followup'
+      fullPath: '/followup'
+      preLoaderRoute: typeof AuthenticatedFollowupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads': {
@@ -187,11 +301,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeadsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/nichos': {
+      id: '/_authenticated/nichos'
+      path: '/nichos'
+      fullPath: '/nichos'
+      preLoaderRoute: typeof AuthenticatedNichosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/objecoes': {
       id: '/_authenticated/objecoes'
       path: '/objecoes'
       fullPath: '/objecoes'
       preLoaderRoute: typeof AuthenticatedObjecoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/precificacao': {
+      id: '/_authenticated/precificacao'
+      path: '/precificacao'
+      fullPath: '/precificacao'
+      preLoaderRoute: typeof AuthenticatedPrecificacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/prompts': {
+      id: '/_authenticated/prompts'
+      path: '/prompts'
+      fullPath: '/prompts'
+      preLoaderRoute: typeof AuthenticatedPromptsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/servicos': {
@@ -207,18 +342,32 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtividadesRoute: typeof AuthenticatedAtividadesRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
+  AuthenticatedCombosRoute: typeof AuthenticatedCombosRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmpresasRoute: typeof AuthenticatedEmpresasRoute
+  AuthenticatedFollowupRoute: typeof AuthenticatedFollowupRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
+  AuthenticatedNichosRoute: typeof AuthenticatedNichosRoute
   AuthenticatedObjecoesRoute: typeof AuthenticatedObjecoesRoute
+  AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
+  AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedServicosRoute: typeof AuthenticatedServicosRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAtividadesRoute: AuthenticatedAtividadesRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
+  AuthenticatedCombosRoute: AuthenticatedCombosRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmpresasRoute: AuthenticatedEmpresasRoute,
+  AuthenticatedFollowupRoute: AuthenticatedFollowupRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
+  AuthenticatedNichosRoute: AuthenticatedNichosRoute,
   AuthenticatedObjecoesRoute: AuthenticatedObjecoesRoute,
+  AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
+  AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedServicosRoute: AuthenticatedServicosRoute,
 }
 
