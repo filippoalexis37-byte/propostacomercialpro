@@ -24,6 +24,8 @@ import { Route as AuthenticatedNichosRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedObjecoesRouteImport } from './routes/_authenticated/objecoes'
 import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
 import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated/prompts'
+import { Route as AuthenticatedPropostasRouteImport } from './routes/_authenticated/propostas'
+import { Route as AuthenticatedRecibosRouteImport } from './routes/_authenticated/recibos'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
 
 const IndexRoute = IndexRouteImport.update({
@@ -102,6 +104,16 @@ const AuthenticatedPromptsRoute = AuthenticatedPromptsRouteImport.update({
   path: '/prompts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPropostasRoute = AuthenticatedPropostasRouteImport.update({
+  id: '/propostas',
+  path: '/propostas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRecibosRoute = AuthenticatedRecibosRouteImport.update({
+  id: '/recibos',
+  path: '/recibos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedServicosRoute = AuthenticatedServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
@@ -123,6 +135,8 @@ export interface FileRoutesByFullPath {
   '/objecoes': typeof AuthenticatedObjecoesRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/prompts': typeof AuthenticatedPromptsRoute
+  '/propostas': typeof AuthenticatedPropostasRoute
+  '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
 }
 export interface FileRoutesByTo {
@@ -140,6 +154,8 @@ export interface FileRoutesByTo {
   '/objecoes': typeof AuthenticatedObjecoesRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/prompts': typeof AuthenticatedPromptsRoute
+  '/propostas': typeof AuthenticatedPropostasRoute
+  '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
 }
 export interface FileRoutesById {
@@ -159,6 +175,8 @@ export interface FileRoutesById {
   '/_authenticated/objecoes': typeof AuthenticatedObjecoesRoute
   '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
+  '/_authenticated/propostas': typeof AuthenticatedPropostasRoute
+  '/_authenticated/recibos': typeof AuthenticatedRecibosRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
 }
 export interface FileRouteTypes {
@@ -178,6 +196,8 @@ export interface FileRouteTypes {
     | '/objecoes'
     | '/precificacao'
     | '/prompts'
+    | '/propostas'
+    | '/recibos'
     | '/servicos'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -195,6 +215,8 @@ export interface FileRouteTypes {
     | '/objecoes'
     | '/precificacao'
     | '/prompts'
+    | '/propostas'
+    | '/recibos'
     | '/servicos'
   id:
     | '__root__'
@@ -213,6 +235,8 @@ export interface FileRouteTypes {
     | '/_authenticated/objecoes'
     | '/_authenticated/precificacao'
     | '/_authenticated/prompts'
+    | '/_authenticated/propostas'
+    | '/_authenticated/recibos'
     | '/_authenticated/servicos'
   fileRoutesById: FileRoutesById
 }
@@ -329,6 +353,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPromptsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/propostas': {
+      id: '/_authenticated/propostas'
+      path: '/propostas'
+      fullPath: '/propostas'
+      preLoaderRoute: typeof AuthenticatedPropostasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recibos': {
+      id: '/_authenticated/recibos'
+      path: '/recibos'
+      fullPath: '/recibos'
+      preLoaderRoute: typeof AuthenticatedRecibosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/servicos': {
       id: '/_authenticated/servicos'
       path: '/servicos'
@@ -352,6 +390,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedObjecoesRoute: typeof AuthenticatedObjecoesRoute
   AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
   AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
+  AuthenticatedPropostasRoute: typeof AuthenticatedPropostasRoute
+  AuthenticatedRecibosRoute: typeof AuthenticatedRecibosRoute
   AuthenticatedServicosRoute: typeof AuthenticatedServicosRoute
 }
 
@@ -368,6 +408,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedObjecoesRoute: AuthenticatedObjecoesRoute,
   AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
   AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
+  AuthenticatedPropostasRoute: AuthenticatedPropostasRoute,
+  AuthenticatedRecibosRoute: AuthenticatedRecibosRoute,
   AuthenticatedServicosRoute: AuthenticatedServicosRoute,
 }
 

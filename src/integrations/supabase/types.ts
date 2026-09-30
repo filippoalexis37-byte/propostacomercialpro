@@ -503,6 +503,7 @@ export type Database = {
           opportunities: string | null
           recommended_services: string | null
           sales_arguments: string | null
+          solution: string | null
           updated_at: string
         }
         Insert: {
@@ -518,6 +519,7 @@ export type Database = {
           opportunities?: string | null
           recommended_services?: string | null
           sales_arguments?: string | null
+          solution?: string | null
           updated_at?: string
         }
         Update: {
@@ -533,6 +535,7 @@ export type Database = {
           opportunities?: string | null
           recommended_services?: string | null
           sales_arguments?: string | null
+          solution?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -676,6 +679,104 @@ export type Database = {
           name?: string
           template?: string
           tone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      proposals: {
+        Row: {
+          bottlenecks: string | null
+          client_name: string
+          company: string | null
+          created_at: string
+          discount_percent: number
+          id: string
+          items: Json
+          niche_id: string | null
+          notes: string | null
+          number: number
+          solution: string | null
+          total: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          bottlenecks?: string | null
+          client_name: string
+          company?: string | null
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          items?: Json
+          niche_id?: string | null
+          notes?: string | null
+          number?: number
+          solution?: string | null
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          bottlenecks?: string | null
+          client_name?: string
+          company?: string | null
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          items?: Json
+          niche_id?: string | null
+          notes?: string | null
+          number?: number
+          solution?: string | null
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_niche_id_fkey"
+            columns: ["niche_id"]
+            isOneToOne: false
+            referencedRelation: "niches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          amount: number
+          client_document: string | null
+          client_name: string
+          created_at: string
+          description: string | null
+          id: string
+          number: number
+          paid_at: string
+          payment_method: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          client_document?: string | null
+          client_name: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          number?: number
+          paid_at?: string
+          payment_method?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_document?: string | null
+          client_name?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          number?: number
+          paid_at?: string
+          payment_method?: string
           updated_at?: string
         }
         Relationships: []

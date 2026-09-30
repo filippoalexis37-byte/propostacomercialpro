@@ -27,6 +27,7 @@ export type Field = {
   required?: boolean;
   list?: boolean;
   full?: boolean;
+  readonly?: boolean;
 };
 
 type Row = Record<string, unknown> & { id: string };
@@ -97,6 +98,7 @@ export function CrudPage({
   searchKeys,
   defaults = {},
   filter,
+  rowActions,
 }: {
   table: string;
   title: string;
@@ -106,6 +108,7 @@ export function CrudPage({
   searchKeys?: string[];
   defaults?: Record<string, unknown>;
   filter?: { key: string; options: string[] };
+  rowActions?: (r: Row) => ReactNode;
 }) {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -141,6 +144,7 @@ export function CrudPage({
     setSaving(true);
     const payload: Record<string, unknown> = {};
     for (const f of fields) {
+      if (f.readonly) continue;
       let v = editing[f.name];
       if (v === "" || v === undefined) v = null;
       if ((f.type === "number" || f.type === "money") && v !== null) v = Number(v);
@@ -236,6 +240,7 @@ export function CrudPage({
                   </td>
                 ))}
                 <td className="px-2 py-2 text-right whitespace-nowrap">
+                  {rowActions?.(r)}
                   <Button size="icon" variant="ghost" onClick={() => setEditing(r)} aria-label="Editar">
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -255,7 +260,7 @@ export function CrudPage({
             <DialogTitle>{editing?.id ? "Editar" : "Novo"} — {title}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
-            {fields.map((f) => {
+            {fields.filter((f) => !f.readonly).map((f) => {
               const v = editing?.[f.name];
               return (
                 <div key={f.name} className={f.full || f.type === "textarea" ? "sm:col-span-2" : ""}>
