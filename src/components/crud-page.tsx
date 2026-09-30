@@ -97,6 +97,7 @@ export function CrudPage({
   searchKeys,
   defaults = {},
   filter,
+  rowActions,
 }: {
   table: string;
   title: string;
@@ -106,6 +107,7 @@ export function CrudPage({
   searchKeys?: string[];
   defaults?: Record<string, unknown>;
   filter?: { key: string; options: string[] };
+  rowActions?: (r: Row) => ReactNode;
 }) {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -236,6 +238,7 @@ export function CrudPage({
                   </td>
                 ))}
                 <td className="px-2 py-2 text-right whitespace-nowrap">
+                  {rowActions?.(r)}
                   <Button size="icon" variant="ghost" onClick={() => setEditing(r)} aria-label="Editar">
                     <Pencil className="h-4 w-4" />
                   </Button>
