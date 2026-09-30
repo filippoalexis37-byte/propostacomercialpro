@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { db, brl, fmtDate } from "@/lib/db";
 
-type Settings = Record<string, string | null>;
+type Settings = { company_name?: string | null; cnpj?: string | null; whatsapp?: string | null; phone?: string | null; email?: string | null; website?: string | null; document_footer?: string | null; pix_key?: string | null };
 
 async function getSettings(): Promise<Settings> {
   const { data } = await db.from("settings").select("*").limit(1).maybeSingle();
