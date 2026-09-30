@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/recibos")({
         </Button>
       )}
       fields={[
-        { name: "number", label: "Nº", list: true, type: "number" },
+        { name: "number", label: "Nº", list: true, readonly: true },
         { name: "client_name", label: "Cliente", required: true, list: true },
         { name: "client_document", label: "CPF/CNPJ" },
         { name: "amount", label: "Valor", type: "money", required: true, list: true },
