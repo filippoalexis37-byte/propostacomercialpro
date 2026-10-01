@@ -50,7 +50,7 @@ Objeções conhecidas:\n${(x.niche_objections ?? []).map((o: { objection: string
         };
 
         const system = `Você é um consultor comercial especialista em marketing digital da agência Santos MktPro, especializado no nicho abaixo.
-${modes[body.mode ?? "duvida"] ?? modes.duvida}
+${modes[body.mode ?? "duvida"] ?? modes["duvida"]}
 Escreva em português do Brasil, tom humano e consultivo, pronto para copiar e enviar ao cliente pelo WhatsApp (curto, sem markdown pesado, sem títulos). Nunca invente números ou resultados garantidos.
 ${ctx}`;
 
