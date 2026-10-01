@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAssistenteRouteImport } from './routes/_authenticated/assistente'
 import { Route as AuthenticatedAtividadesRouteImport } from './routes/_authenticated/atividades'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedCombosRouteImport } from './routes/_authenticated/combos'
@@ -27,6 +28,7 @@ import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPropostasRouteImport } from './routes/_authenticated/propostas'
 import { Route as AuthenticatedRecibosRouteImport } from './routes/_authenticated/recibos'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
+import { Route as ApiNicheAiRouteImport } from './routes/api/niche-ai'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,6 +43,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAssistenteRoute = AuthenticatedAssistenteRouteImport.update({
+  id: '/assistente',
+  path: '/assistente',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAtividadesRoute = AuthenticatedAtividadesRouteImport.update({
   id: '/atividades',
@@ -119,10 +126,16 @@ const AuthenticatedServicosRoute = AuthenticatedServicosRouteImport.update({
   path: '/servicos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiNicheAiRoute = ApiNicheAiRouteImport.update({
+  id: '/api/niche-ai',
+  path: '/api/niche-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/assistente': typeof AuthenticatedAssistenteRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/combos': typeof AuthenticatedCombosRoute
@@ -138,10 +151,12 @@ export interface FileRoutesByFullPath {
   '/propostas': typeof AuthenticatedPropostasRoute
   '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
+  '/api/niche-ai': typeof ApiNicheAiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/assistente': typeof AuthenticatedAssistenteRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/combos': typeof AuthenticatedCombosRoute
@@ -157,12 +172,14 @@ export interface FileRoutesByTo {
   '/propostas': typeof AuthenticatedPropostasRoute
   '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
+  '/api/niche-ai': typeof ApiNicheAiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/assistente': typeof AuthenticatedAssistenteRoute
   '/_authenticated/atividades': typeof AuthenticatedAtividadesRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/combos': typeof AuthenticatedCombosRoute
@@ -178,12 +195,14 @@ export interface FileRoutesById {
   '/_authenticated/propostas': typeof AuthenticatedPropostasRoute
   '/_authenticated/recibos': typeof AuthenticatedRecibosRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
+  '/api/niche-ai': typeof ApiNicheAiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/assistente'
     | '/atividades'
     | '/clientes'
     | '/combos'
@@ -199,10 +218,12 @@ export interface FileRouteTypes {
     | '/propostas'
     | '/recibos'
     | '/servicos'
+    | '/api/niche-ai'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/assistente'
     | '/atividades'
     | '/clientes'
     | '/combos'
@@ -218,11 +239,13 @@ export interface FileRouteTypes {
     | '/propostas'
     | '/recibos'
     | '/servicos'
+    | '/api/niche-ai'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/assistente'
     | '/_authenticated/atividades'
     | '/_authenticated/clientes'
     | '/_authenticated/combos'
@@ -238,12 +261,14 @@ export interface FileRouteTypes {
     | '/_authenticated/propostas'
     | '/_authenticated/recibos'
     | '/_authenticated/servicos'
+    | '/api/niche-ai'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiNicheAiRoute: typeof ApiNicheAiRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -268,6 +293,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/assistente': {
+      id: '/_authenticated/assistente'
+      path: '/assistente'
+      fullPath: '/assistente'
+      preLoaderRoute: typeof AuthenticatedAssistenteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/atividades': {
       id: '/_authenticated/atividades'
@@ -374,10 +406,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedServicosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/niche-ai': {
+      id: '/api/niche-ai'
+      path: '/api/niche-ai'
+      fullPath: '/api/niche-ai'
+      preLoaderRoute: typeof ApiNicheAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAssistenteRoute: typeof AuthenticatedAssistenteRoute
   AuthenticatedAtividadesRoute: typeof AuthenticatedAtividadesRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedCombosRoute: typeof AuthenticatedCombosRoute
@@ -396,6 +436,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAssistenteRoute: AuthenticatedAssistenteRoute,
   AuthenticatedAtividadesRoute: AuthenticatedAtividadesRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedCombosRoute: AuthenticatedCombosRoute,
@@ -420,6 +461,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiNicheAiRoute: ApiNicheAiRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

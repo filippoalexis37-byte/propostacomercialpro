@@ -9,7 +9,7 @@ async function getSettings(): Promise<Settings> {
   return data ?? { company_name: "Santos MktPro" };
 }
 
-const BLUE: [number, number, number] = [37, 99, 235];
+const BLUE: [number, number, number] = [212, 175, 55];
 const DARK: [number, number, number] = [20, 27, 45];
 
 function header(doc: jsPDF, s: Settings, title: string, number?: number) {
