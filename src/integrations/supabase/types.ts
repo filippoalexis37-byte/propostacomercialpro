@@ -685,49 +685,73 @@ export type Database = {
       }
       proposals: {
         Row: {
+          audience: string | null
           bottlenecks: string | null
+          city: string | null
           client_name: string
           company: string | null
+          consultant: string
+          content: Json | null
           created_at: string
+          diagnosis_notes: string | null
           discount_percent: number
+          district: string | null
+          goal: string | null
           id: string
           items: Json
           niche_id: string | null
           notes: string | null
           number: number
           solution: string | null
+          sub_niche: string | null
           total: number
           updated_at: string
           valid_until: string | null
         }
         Insert: {
+          audience?: string | null
           bottlenecks?: string | null
+          city?: string | null
           client_name: string
           company?: string | null
+          consultant?: string
+          content?: Json | null
           created_at?: string
+          diagnosis_notes?: string | null
           discount_percent?: number
+          district?: string | null
+          goal?: string | null
           id?: string
           items?: Json
           niche_id?: string | null
           notes?: string | null
           number?: number
           solution?: string | null
+          sub_niche?: string | null
           total?: number
           updated_at?: string
           valid_until?: string | null
         }
         Update: {
+          audience?: string | null
           bottlenecks?: string | null
+          city?: string | null
           client_name?: string
           company?: string | null
+          consultant?: string
+          content?: Json | null
           created_at?: string
+          diagnosis_notes?: string | null
           discount_percent?: number
+          district?: string | null
+          goal?: string | null
           id?: string
           items?: Json
           niche_id?: string | null
           notes?: string | null
           number?: number
           solution?: string | null
+          sub_niche?: string | null
           total?: number
           updated_at?: string
           valid_until?: string | null
