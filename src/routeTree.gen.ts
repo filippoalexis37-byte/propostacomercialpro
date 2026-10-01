@@ -29,6 +29,7 @@ import { Route as AuthenticatedPropostasRouteImport } from './routes/_authentica
 import { Route as AuthenticatedRecibosRouteImport } from './routes/_authenticated/recibos'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
 import { Route as ApiNicheAiRouteImport } from './routes/api/niche-ai'
+import { Route as ApiProposalAiRouteImport } from './routes/api/proposal-ai'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -131,6 +132,11 @@ const ApiNicheAiRoute = ApiNicheAiRouteImport.update({
   path: '/api/niche-ai',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProposalAiRoute = ApiProposalAiRouteImport.update({
+  id: '/api/proposal-ai',
+  path: '/api/proposal-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
   '/api/niche-ai': typeof ApiNicheAiRoute
+  '/api/proposal-ai': typeof ApiProposalAiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
   '/api/niche-ai': typeof ApiNicheAiRoute
+  '/api/proposal-ai': typeof ApiProposalAiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/_authenticated/recibos': typeof AuthenticatedRecibosRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
   '/api/niche-ai': typeof ApiNicheAiRoute
+  '/api/proposal-ai': typeof ApiProposalAiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/recibos'
     | '/servicos'
     | '/api/niche-ai'
+    | '/api/proposal-ai'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/recibos'
     | '/servicos'
     | '/api/niche-ai'
+    | '/api/proposal-ai'
   id:
     | '__root__'
     | '/'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recibos'
     | '/_authenticated/servicos'
     | '/api/niche-ai'
+    | '/api/proposal-ai'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -269,6 +281,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiNicheAiRoute: typeof ApiNicheAiRoute
+  ApiProposalAiRoute: typeof ApiProposalAiRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -413,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiNicheAiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/proposal-ai': {
+      id: '/api/proposal-ai'
+      path: '/api/proposal-ai'
+      fullPath: '/api/proposal-ai'
+      preLoaderRoute: typeof ApiProposalAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -462,6 +482,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiNicheAiRoute: ApiNicheAiRoute,
+  ApiProposalAiRoute: ApiProposalAiRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
