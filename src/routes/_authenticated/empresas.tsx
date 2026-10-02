@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CrudPage } from "@/components/crud-page";
 import { pageHead } from "@/lib/meta";
+import { PlacesSearch } from "@/components/places-search";
 
 export const Route = createFileRoute("/_authenticated/empresas")({
   head: pageHead("Empresas", "Cadastro de empresas prospectadas e clientes."),
   component: () => (
+    <>
+    <PlacesSearch />
     <CrudPage
       table="companies"
       title="Empresas"
@@ -31,5 +34,6 @@ export const Route = createFileRoute("/_authenticated/empresas")({
         { name: "notes", label: "Observações", type: "textarea" },
       ]}
     />
+    </>
   ),
 });

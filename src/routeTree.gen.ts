@@ -28,7 +28,9 @@ import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPropostasRouteImport } from './routes/_authenticated/propostas'
 import { Route as AuthenticatedRecibosRouteImport } from './routes/_authenticated/recibos'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
+import { Route as ApiMarketResearchRouteImport } from './routes/api/market-research'
 import { Route as ApiNicheAiRouteImport } from './routes/api/niche-ai'
+import { Route as ApiPlacesRouteImport } from './routes/api/places'
 import { Route as ApiProposalAiRouteImport } from './routes/api/proposal-ai'
 
 const IndexRoute = IndexRouteImport.update({
@@ -127,9 +129,19 @@ const AuthenticatedServicosRoute = AuthenticatedServicosRouteImport.update({
   path: '/servicos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiMarketResearchRoute = ApiMarketResearchRouteImport.update({
+  id: '/api/market-research',
+  path: '/api/market-research',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiNicheAiRoute = ApiNicheAiRouteImport.update({
   id: '/api/niche-ai',
   path: '/api/niche-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlacesRoute = ApiPlacesRouteImport.update({
+  id: '/api/places',
+  path: '/api/places',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProposalAiRoute = ApiProposalAiRouteImport.update({
@@ -157,7 +169,9 @@ export interface FileRoutesByFullPath {
   '/propostas': typeof AuthenticatedPropostasRoute
   '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
+  '/api/market-research': typeof ApiMarketResearchRoute
   '/api/niche-ai': typeof ApiNicheAiRoute
+  '/api/places': typeof ApiPlacesRoute
   '/api/proposal-ai': typeof ApiProposalAiRoute
 }
 export interface FileRoutesByTo {
@@ -179,7 +193,9 @@ export interface FileRoutesByTo {
   '/propostas': typeof AuthenticatedPropostasRoute
   '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
+  '/api/market-research': typeof ApiMarketResearchRoute
   '/api/niche-ai': typeof ApiNicheAiRoute
+  '/api/places': typeof ApiPlacesRoute
   '/api/proposal-ai': typeof ApiProposalAiRoute
 }
 export interface FileRoutesById {
@@ -203,7 +219,9 @@ export interface FileRoutesById {
   '/_authenticated/propostas': typeof AuthenticatedPropostasRoute
   '/_authenticated/recibos': typeof AuthenticatedRecibosRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
+  '/api/market-research': typeof ApiMarketResearchRoute
   '/api/niche-ai': typeof ApiNicheAiRoute
+  '/api/places': typeof ApiPlacesRoute
   '/api/proposal-ai': typeof ApiProposalAiRoute
 }
 export interface FileRouteTypes {
@@ -227,7 +245,9 @@ export interface FileRouteTypes {
     | '/propostas'
     | '/recibos'
     | '/servicos'
+    | '/api/market-research'
     | '/api/niche-ai'
+    | '/api/places'
     | '/api/proposal-ai'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -249,7 +269,9 @@ export interface FileRouteTypes {
     | '/propostas'
     | '/recibos'
     | '/servicos'
+    | '/api/market-research'
     | '/api/niche-ai'
+    | '/api/places'
     | '/api/proposal-ai'
   id:
     | '__root__'
@@ -272,7 +294,9 @@ export interface FileRouteTypes {
     | '/_authenticated/propostas'
     | '/_authenticated/recibos'
     | '/_authenticated/servicos'
+    | '/api/market-research'
     | '/api/niche-ai'
+    | '/api/places'
     | '/api/proposal-ai'
   fileRoutesById: FileRoutesById
 }
@@ -280,7 +304,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiMarketResearchRoute: typeof ApiMarketResearchRoute
   ApiNicheAiRoute: typeof ApiNicheAiRoute
+  ApiPlacesRoute: typeof ApiPlacesRoute
   ApiProposalAiRoute: typeof ApiProposalAiRoute
 }
 
@@ -419,11 +445,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedServicosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/market-research': {
+      id: '/api/market-research'
+      path: '/api/market-research'
+      fullPath: '/api/market-research'
+      preLoaderRoute: typeof ApiMarketResearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/niche-ai': {
       id: '/api/niche-ai'
       path: '/api/niche-ai'
       fullPath: '/api/niche-ai'
       preLoaderRoute: typeof ApiNicheAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/places': {
+      id: '/api/places'
+      path: '/api/places'
+      fullPath: '/api/places'
+      preLoaderRoute: typeof ApiPlacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/proposal-ai': {
@@ -481,7 +521,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiMarketResearchRoute: ApiMarketResearchRoute,
   ApiNicheAiRoute: ApiNicheAiRoute,
+  ApiPlacesRoute: ApiPlacesRoute,
   ApiProposalAiRoute: ApiProposalAiRoute,
 }
 export const routeTree = rootRouteImport

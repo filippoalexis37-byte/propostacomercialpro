@@ -2,10 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CrudPage } from "@/components/crud-page";
 import { LEAD_STATUSES } from "@/lib/db";
 import { pageHead } from "@/lib/meta";
+import { PlacesSearch } from "@/components/places-search";
 
 export const Route = createFileRoute("/_authenticated/leads")({
   head: pageHead("Leads", "Funil de leads e oportunidades."),
   component: () => (
+    <>
+    <PlacesSearch />
     <CrudPage
       table="leads"
       title="Leads"
@@ -33,5 +36,6 @@ export const Route = createFileRoute("/_authenticated/leads")({
         { name: "notes", label: "Observações", type: "textarea" },
       ]}
     />
+    </>
   ),
 });
