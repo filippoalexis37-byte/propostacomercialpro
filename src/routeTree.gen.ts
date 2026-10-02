@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAfiliadosRouteImport } from './routes/_authenticated/afiliados'
 import { Route as AuthenticatedAssistenteRouteImport } from './routes/_authenticated/assistente'
 import { Route as AuthenticatedAtividadesRouteImport } from './routes/_authenticated/atividades'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
@@ -23,6 +24,7 @@ import { Route as AuthenticatedFollowupRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedNichosRouteImport } from './routes/_authenticated/nichos'
 import { Route as AuthenticatedObjecoesRouteImport } from './routes/_authenticated/objecoes'
+import { Route as AuthenticatedPesquisaRouteImport } from './routes/_authenticated/pesquisa'
 import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
 import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated/prompts'
 import { Route as AuthenticatedPropostasRouteImport } from './routes/_authenticated/propostas'
@@ -46,6 +48,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAfiliadosRoute = AuthenticatedAfiliadosRouteImport.update({
+  id: '/afiliados',
+  path: '/afiliados',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAssistenteRoute = AuthenticatedAssistenteRouteImport.update({
   id: '/assistente',
@@ -103,6 +110,11 @@ const AuthenticatedObjecoesRoute = AuthenticatedObjecoesRouteImport.update({
   path: '/objecoes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPesquisaRoute = AuthenticatedPesquisaRouteImport.update({
+  id: '/pesquisa',
+  path: '/pesquisa',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPrecificacaoRoute =
   AuthenticatedPrecificacaoRouteImport.update({
     id: '/precificacao',
@@ -153,6 +165,7 @@ const ApiProposalAiRoute = ApiProposalAiRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/afiliados': typeof AuthenticatedAfiliadosRoute
   '/assistente': typeof AuthenticatedAssistenteRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -164,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/nichos': typeof AuthenticatedNichosRoute
   '/objecoes': typeof AuthenticatedObjecoesRoute
+  '/pesquisa': typeof AuthenticatedPesquisaRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/prompts': typeof AuthenticatedPromptsRoute
   '/propostas': typeof AuthenticatedPropostasRoute
@@ -177,6 +191,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/afiliados': typeof AuthenticatedAfiliadosRoute
   '/assistente': typeof AuthenticatedAssistenteRoute
   '/atividades': typeof AuthenticatedAtividadesRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -188,6 +203,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/nichos': typeof AuthenticatedNichosRoute
   '/objecoes': typeof AuthenticatedObjecoesRoute
+  '/pesquisa': typeof AuthenticatedPesquisaRoute
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/prompts': typeof AuthenticatedPromptsRoute
   '/propostas': typeof AuthenticatedPropostasRoute
@@ -203,6 +219,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/afiliados': typeof AuthenticatedAfiliadosRoute
   '/_authenticated/assistente': typeof AuthenticatedAssistenteRoute
   '/_authenticated/atividades': typeof AuthenticatedAtividadesRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
@@ -214,6 +231,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/nichos': typeof AuthenticatedNichosRoute
   '/_authenticated/objecoes': typeof AuthenticatedObjecoesRoute
+  '/_authenticated/pesquisa': typeof AuthenticatedPesquisaRoute
   '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/propostas': typeof AuthenticatedPropostasRoute
@@ -229,6 +247,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/afiliados'
     | '/assistente'
     | '/atividades'
     | '/clientes'
@@ -240,6 +259,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/nichos'
     | '/objecoes'
+    | '/pesquisa'
     | '/precificacao'
     | '/prompts'
     | '/propostas'
@@ -253,6 +273,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/afiliados'
     | '/assistente'
     | '/atividades'
     | '/clientes'
@@ -264,6 +285,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/nichos'
     | '/objecoes'
+    | '/pesquisa'
     | '/precificacao'
     | '/prompts'
     | '/propostas'
@@ -278,6 +300,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/afiliados'
     | '/_authenticated/assistente'
     | '/_authenticated/atividades'
     | '/_authenticated/clientes'
@@ -289,6 +312,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/nichos'
     | '/_authenticated/objecoes'
+    | '/_authenticated/pesquisa'
     | '/_authenticated/precificacao'
     | '/_authenticated/prompts'
     | '/_authenticated/propostas'
@@ -332,6 +356,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/afiliados': {
+      id: '/_authenticated/afiliados'
+      path: '/afiliados'
+      fullPath: '/afiliados'
+      preLoaderRoute: typeof AuthenticatedAfiliadosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/assistente': {
       id: '/_authenticated/assistente'
@@ -410,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedObjecoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pesquisa': {
+      id: '/_authenticated/pesquisa'
+      path: '/pesquisa'
+      fullPath: '/pesquisa'
+      preLoaderRoute: typeof AuthenticatedPesquisaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/precificacao': {
       id: '/_authenticated/precificacao'
       path: '/precificacao'
@@ -477,6 +515,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAfiliadosRoute: typeof AuthenticatedAfiliadosRoute
   AuthenticatedAssistenteRoute: typeof AuthenticatedAssistenteRoute
   AuthenticatedAtividadesRoute: typeof AuthenticatedAtividadesRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
@@ -488,6 +527,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedNichosRoute: typeof AuthenticatedNichosRoute
   AuthenticatedObjecoesRoute: typeof AuthenticatedObjecoesRoute
+  AuthenticatedPesquisaRoute: typeof AuthenticatedPesquisaRoute
   AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
   AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedPropostasRoute: typeof AuthenticatedPropostasRoute
@@ -496,6 +536,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAfiliadosRoute: AuthenticatedAfiliadosRoute,
   AuthenticatedAssistenteRoute: AuthenticatedAssistenteRoute,
   AuthenticatedAtividadesRoute: AuthenticatedAtividadesRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
@@ -507,6 +548,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedNichosRoute: AuthenticatedNichosRoute,
   AuthenticatedObjecoesRoute: AuthenticatedObjecoesRoute,
+  AuthenticatedPesquisaRoute: AuthenticatedPesquisaRoute,
   AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
   AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedPropostasRoute: AuthenticatedPropostasRoute,
