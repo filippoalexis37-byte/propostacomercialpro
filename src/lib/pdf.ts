@@ -9,26 +9,46 @@ async function getSettings(): Promise<Settings> {
   return data ?? { company_name: "Santos MktPro" };
 }
 
-const BLUE: [number, number, number] = [212, 175, 55];
-const DARK: [number, number, number] = [20, 27, 45];
+const BLUE: [number, number, number] = [201, 162, 39];
+const GOLD = BLUE;
+const DARK: [number, number, number] = [18, 16, 12];
+
+const imgCache: Record<string, string> = {};
+async function loadImg(url: string): Promise<string | null> {
+  if (imgCache[url]) return imgCache[url];
+  try {
+    const b = await (await fetch(url)).blob();
+    const d = await new Promise<string>((r) => { const f = new FileReader(); f.onload = () => r(String(f.result)); f.readAsDataURL(b); });
+    return (imgCache[url] = d);
+  } catch { return null; }
+}
+let LOGO: string | null = null;
+async function prep() { LOGO = await loadImg("/logo-santos.jpg"); }
 
 function header(doc: jsPDF, s: Settings, title: string, number?: number) {
   const w = doc.internal.pageSize.getWidth();
   doc.setFillColor(...DARK);
   doc.rect(0, 0, w, 32, "F");
-  doc.setTextColor(255, 255, 255);
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 32, w, 1.5, "F");
+  const x0 = LOGO ? 38 : 14;
+  if (LOGO) doc.addImage(LOGO, "JPEG", 10, 4, 24, 24);
+  doc.setTextColor(...GOLD);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text(s.company_name || "Santos MktPro", 14, 15);
+  doc.text(s.company_name || "Santos MktPro", x0, 15);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
+  doc.setTextColor(230, 220, 190);
   const info = [s.cnpj && `CNPJ ${s.cnpj}`, s.whatsapp || s.phone, s.email, s.website].filter(Boolean).join("  •  ");
-  doc.text(info, 14, 23);
+  doc.text(info, x0, 23);
+  doc.setTextColor(...GOLD);
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.text(title + (number ? ` Nº ${String(number).padStart(4, "0")}` : ""), w - 14, 15, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
+  doc.setTextColor(230, 220, 190);
   doc.text(new Date().toLocaleDateString("pt-BR"), w - 14, 23, { align: "right" });
   doc.setTextColor(30, 30, 30);
 }
@@ -71,6 +91,7 @@ export type Proposal = {
 
 export async function proposalPdf(p: Proposal) {
   const s = await getSettings();
+  await prep();
   const doc = new jsPDF();
   header(doc, s, "PROPOSTA COMERCIAL", p.number);
   doc.setFontSize(11);
@@ -92,8 +113,8 @@ export async function proposalPdf(p: Proposal) {
       ...(p.discount_percent ? [["", "", `Desconto (${p.discount_percent}%)`, "- " + brl(subtotal - p.total)]] : []),
       ["", "", "TOTAL", brl(p.total)],
     ],
-    headStyles: { fillColor: DARK },
-    footStyles: { fillColor: [240, 244, 255], textColor: DARK, fontStyle: "bold" },
+    headStyles: { fillColor: DARK, textColor: GOLD },
+    footStyles: { fillColor: [250, 243, 220], textColor: DARK, fontStyle: "bold" },
     columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" } },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -111,10 +132,11 @@ export type Receipt = {
 
 export async function receiptPdf(r: Receipt) {
   const s = await getSettings();
+  await prep();
   const doc = new jsPDF();
   const w = doc.internal.pageSize.getWidth();
   header(doc, s, "RECIBO", r.number);
-  doc.setFillColor(240, 244, 255);
+  doc.setFillColor(250, 243, 220);
   doc.roundedRect(w - 84, 42, 70, 18, 3, 3, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
@@ -127,9 +149,57 @@ export async function receiptPdf(r: Receipt) {
     `paga via ${r.payment_method} em ${fmtDate(r.paid_at)}.`;
   doc.text(doc.splitTextToSize(text, w - 28), 14, 78);
   doc.text("Para clareza, firmamos o presente recibo.", 14, 104);
+  const sig = await loadImg("/assinatura.png");
+  if (sig) doc.addImage(sig, "PNG", w / 2 - 35, 132, 70, 11.4);
+  doc.setDrawColor(...GOLD);
   doc.line(w / 2 - 50, 150, w / 2 + 50, 150);
-  doc.text(s.company_name || "Santos MktPro", w / 2, 156, { align: "center" });
+  doc.text("Lucas Santos — " + (s.company_name || "Santos MktPro"), w / 2, 156, { align: "center" });
   if (s.cnpj) doc.text(`CNPJ ${s.cnpj}`, w / 2, 162, { align: "center" });
   footer(doc, s);
   doc.save(`recibo-${r.client_name.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+}
+
+export type DocSection = { title: string; body?: string; table?: { head: string[]; rows: string[][] } };
+
+export async function documentPdf(opts: { title: string; subtitle?: string; client: string; sections: DocSection[]; filename: string; signature?: boolean }) {
+  const s = await getSettings();
+  await prep();
+  const doc = new jsPDF();
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  // cover
+  doc.setFillColor(...DARK); doc.rect(0, 0, w, h, "F");
+  if (LOGO) doc.addImage(LOGO, "JPEG", w / 2 - 30, 40, 60, 60);
+  doc.setTextColor(...GOLD); doc.setFont("helvetica", "bold"); doc.setFontSize(22);
+  doc.text(doc.splitTextToSize(opts.title.toUpperCase(), w - 40), w / 2, 125, { align: "center" });
+  doc.setFontSize(16); doc.setTextColor(240, 230, 200);
+  doc.text(opts.client, w / 2, 150, { align: "center" });
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+  if (opts.subtitle) doc.text(opts.subtitle, w / 2, 160, { align: "center" });
+  doc.text(new Date().toLocaleDateString("pt-BR"), w / 2, 170, { align: "center" });
+  doc.setFillColor(...GOLD); doc.rect(w / 2 - 30, 180, 60, 0.8, "F");
+  doc.text("Consultor: Lucas Santos  •  " + (s.company_name || "Santos MktPro"), w / 2, h - 30, { align: "center" });
+  doc.addPage();
+  header(doc, s, opts.title.length > 28 ? "DOCUMENTO" : opts.title.toUpperCase());
+  let y = 46;
+  for (const sec of opts.sections) {
+    if (sec.body !== undefined) y = section(doc, y, sec.title, sec.body);
+    if (sec.table) {
+      if (sec.body === undefined) y = section(doc, y, sec.title, "");
+      autoTable(doc, { startY: y - 8, head: [sec.table.head], body: sec.table.rows, headStyles: { fillColor: DARK, textColor: GOLD }, styles: { fontSize: 8.5 } });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      y = (doc as any).lastAutoTable.finalY + 12;
+    }
+  }
+  if (opts.signature) {
+    if (y > 240) { doc.addPage(); y = 30; }
+    const sig = await loadImg("/assinatura.png");
+    if (sig) doc.addImage(sig, "PNG", 14, y + 4, 60, 9.8);
+    doc.setDrawColor(...GOLD); doc.line(14, y + 18, 90, y + 18); doc.line(w - 90, y + 18, w - 14, y + 18);
+    doc.setFontSize(9); doc.setTextColor(60, 60, 60);
+    doc.text("Lucas Santos — Santos MktPro", 14, y + 23); doc.text("De acordo — " + opts.client, w - 90, y + 23);
+  }
+  const pages = doc.getNumberOfPages();
+  for (let i = 2; i <= pages; i++) { doc.setPage(i); footer(doc, s); }
+  doc.save(opts.filename);
 }
