@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   LayoutDashboard, Users, Building2, BadgeCheck, CalendarClock, Briefcase, Calculator,
-  Package, Target, MessageSquareWarning, Sparkles, BellRing, Settings, LogOut, Menu, X, FileText, Receipt, Bot,
+  Package, Target, MessageSquareWarning, Sparkles, BellRing, Settings, LogOut, Menu, X, FileText, Receipt, Bot, Search, Handshake,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db";
@@ -32,11 +32,13 @@ const NAV = [
     { to: "/precificacao", label: "Precificação", icon: Calculator },
     { to: "/combos", label: "Combos", icon: Package },
     { to: "/propostas", label: "Propostas (PDF)", icon: FileText },
+    { to: "/afiliados", label: "Proposta afiliados", icon: Handshake },
     { to: "/recibos", label: "Recibos (PDF)", icon: Receipt },
   ]},
   { group: "Inteligência", items: [
     { to: "/nichos", label: "Nichos", icon: Target },
     { to: "/objecoes", label: "Objeções", icon: MessageSquareWarning },
+    { to: "/pesquisa", label: "Pesquisa de mercado", icon: Search },
     { to: "/assistente", label: "Assistente IA", icon: Bot },
     { to: "/prompts", label: "Gerador de prompts", icon: Sparkles },
   ]},
