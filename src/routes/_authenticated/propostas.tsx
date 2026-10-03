@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { FileDown, Pencil, Plus, Trash2, X } from "lucide-react";
+import { FileDown, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { apiPost } from "@/lib/api";
 import { toast } from "sonner";
 import { db, brl, fmtDate } from "@/lib/db";
 import { PageHeader } from "@/components/crud-page";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { pageHead } from "@/lib/meta";
-import { proposalPdf, type ProposalItem } from "@/lib/pdf";
+import { proposalPdf, documentPdf, type ProposalItem } from "@/lib/pdf";
 
 export const Route = createFileRoute("/_authenticated/propostas")({
   head: pageHead("Propostas", "Propostas comerciais em PDF com gargalos do nicho."),
@@ -22,10 +23,14 @@ type P = {
   id?: string; number?: number; client_name: string; company: string; niche_id: string;
   items: ProposalItem[]; bottlenecks: string; solution: string; discount_percent: number;
   valid_until: string; notes: string; total?: number;
+  sub_niche: string; city: string; district: string; audience: string; goal: string;
+  diagnosis_notes: string; consultant: string; content: any;
 };
 
 const empty = (): P => ({
   client_name: "", company: "", niche_id: "", items: [], bottlenecks: "", solution: "",
+  sub_niche: "", city: "", district: "", audience: "", goal: "", diagnosis_notes: "",
+  consultant: "Lucas Santos", content: null,
   discount_percent: 0, notes: "Pagamento mensal via PIX. Início em até 7 dias após aprovação.",
   valid_until: new Date(Date.now() + 15 * 864e5).toISOString().slice(0, 10),
 });
@@ -35,6 +40,7 @@ const sel = "h-9 w-full rounded-md border border-input bg-background px-3 text-s
 function Propostas() {
   const qc = useQueryClient();
   const [edit, setEdit] = useState<P | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
   const { data: list = [] } = useQuery({
     queryKey: ["proposals"],
     queryFn: async () => (await db.from("proposals").select("*").order("created_at", { ascending: false })).data ?? [],
@@ -84,7 +90,36 @@ function Propostas() {
     toast.success("Proposta salva");
     qc.invalidateQueries({ queryKey: ["proposals"] });
     setEdit(null);
-    if (andPdf) await proposalPdf({ ...res.data, niche_name: nicheName(res.data.niche_id) });
+    if (andPdf) await makePdf(res.data);
+  }
+
+  async function makePdf(p: any) {
+    const c = p.content;
+    if (!c) return proposalPdf({ ...p, niche_name: nicheName(p.niche_id) });
+    const sub = subtotal(p);
+    const list = (a: any) => (Array.isArray(a) ? a.map((x: string) => `• ${x}`).join("\n") : a ?? "");
+    await documentPdf({
+      title: "Proposta Comercial",
+      client: p.company || p.client_name,
+      subtitle: [nicheName(p.niche_id), p.sub_niche, [p.city, p.district].filter(Boolean).join(" / "), `Nº ${p.number ?? ""}`].filter(Boolean).join("  •  "),
+      filename: `proposta-${(p.company || p.client_name).replace(/\s+/g, "-").toLowerCase()}.pdf`,
+      signature: true,
+      sections: [
+        { title: "Sobre a Santos MktPro", body: c.about },
+        { title: "Resumo do projeto", body: c.summary },
+        ...(c.diagnosis?.length ? [{ title: "Diagnóstico digital", table: { head: ["Área", "Situação", "Impacto", "Oportunidade", "Prioridade"], rows: c.diagnosis.map((d: any) => [d.area, d.situation, d.impact, d.opportunity, d.priority]) } }] : []),
+        { title: `Gargalos identificados${nicheName(p.niche_id) ? " — " + nicheName(p.niche_id) : ""}`, body: p.bottlenecks },
+        { title: "Necessidades", body: list(c.needs) },
+        { title: "Objetivos", body: list(c.objectives) },
+        { title: "Nossa solução", body: p.solution },
+        { title: "Estratégia", body: c.strategy },
+        ...(c.services ?? []).map((sv: any) => ({ title: sv.name, body: [`Objetivo: ${sv.objective}`, `O que será feito:\n${sv.what}`, `Como: ${sv.how}`, `Por que: ${sv.why}`, `Acompanhamento: ${sv.tracking}`, `Indicadores: ${sv.kpis}`].join("\n\n") })),
+        { title: "Investimento", table: { head: ["Serviço", "Qtd", "Valor unit.", "Total"], rows: [...p.items.map((i: any) => [i.name, String(i.qty), brl(i.price), brl(i.price * i.qty)]), ...(p.discount_percent ? [["", "", `Desconto (${p.discount_percent}%)`, "- " + brl(sub - total(p))]] : []), ["", "", "TOTAL", brl(total(p))]] } },
+        { title: "Etapas do trabalho", body: list(c.process) },
+        { title: "Acompanhamento", body: c.followup },
+        { title: "Condições", body: `${p.notes ?? ""}${p.valid_until ? `\nProposta válida até ${fmtDate(p.valid_until)}.` : ""}` },
+      ],
+    });
   }
 
   async function remove(id: string) {
@@ -133,6 +168,33 @@ function Propostas() {
               <div><Label className="mb-1.5 block text-xs text-muted-foreground">Gargalos do nicho (editável)</Label><Textarea rows={6} value={edit.bottlenecks} onChange={(e) => setE({ bottlenecks: e.target.value })} /></div>
               <div><Label className="mb-1.5 block text-xs text-muted-foreground">Minha solução (editável)</Label><Textarea rows={6} value={edit.solution} onChange={(e) => setE({ solution: e.target.value })} /></div>
             </div>
+            <div className="panel grid gap-4 p-5 sm:grid-cols-2">
+              {([["sub_niche","Subnicho"],["city","Cidade"],["district","Bairro"],["audience","Público-alvo"],["goal","Objetivo principal"],["consultant","Consultor"]] as const).map(([k, l]) => (
+                <div key={k}><Label className="mb-1.5 block text-xs text-muted-foreground">{l}</Label><Input value={(edit as any)[k]} onChange={(e) => setE({ [k]: e.target.value } as any)} /></div>
+              ))}
+              <div className="sm:col-span-2"><Label className="mb-1.5 block text-xs text-muted-foreground">Diagnóstico que eu observei (a IA só usa isso como fato)</Label><Textarea rows={4} value={edit.diagnosis_notes} onChange={(e) => setE({ diagnosis_notes: e.target.value })} /></div>
+              <div className="sm:col-span-2">
+                <Button type="button" variant="outline" disabled={aiBusy} onClick={async () => {
+                  if (!edit.items.length) return void toast.error("Adicione os serviços antes");
+                  setAiBusy(true);
+                  try { const c = await apiPost<any>("/api/proposal-ai", edit); setE({ content: c }); toast.success("Conteúdo gerado — revise abaixo"); }
+                  catch (e: any) { toast.error(e.message); } finally { setAiBusy(false); }
+                }}><Sparkles className="mr-1 h-4 w-4" />{aiBusy ? "Gerando... (até 1 min)" : edit.content ? "Gerar de novo com IA" : "Gerar conteúdo com IA"}</Button>
+              </div>
+            </div>
+            {edit.content && (
+              <div className="panel space-y-4 p-5">
+                <h3 className="font-display font-semibold text-foreground">Texto da proposta (editável)</h3>
+                {([["about","Sobre a Santos MktPro"],["summary","Resumo do projeto"],["needs","Necessidades (uma por linha)"],["objectives","Objetivos (um por linha)"],["strategy","Estratégia"],["process","Etapas (uma por linha)"],["followup","Acompanhamento"]] as const).map(([k, l]) => {
+                  const v = edit.content[k]; const isArr = Array.isArray(v);
+                  return <div key={k}><Label className="mb-1.5 block text-xs text-muted-foreground">{l}</Label><Textarea rows={4} value={isArr ? v.join("\n") : v ?? ""} onChange={(e) => setE({ content: { ...edit.content, [k]: isArr ? e.target.value.split("\n") : e.target.value } })} /></div>;
+                })}
+                {(edit.content.services ?? []).map((sv: any, i: number) => (
+                  <div key={i}><Label className="mb-1.5 block text-xs text-muted-foreground">{sv.name} — o que será feito</Label><Textarea rows={4} value={sv.what ?? ""} onChange={(e) => setE({ content: { ...edit.content, services: edit.content.services.map((x: any, j: number) => j === i ? { ...x, what: e.target.value } : x) } })} /></div>
+                ))}
+                <p className="text-xs text-muted-foreground">O diagnóstico em tabela ({edit.content.diagnosis?.length ?? 0} áreas) vai no PDF.</p>
+              </div>
+            )}
             <div className="panel p-5">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h3 className="font-display font-semibold text-foreground">Serviços</h3>
@@ -195,8 +257,8 @@ function Propostas() {
                 <td className="px-4 py-3 text-foreground">{brl(p.total)}</td>
                 <td className="px-4 py-3 text-muted-foreground">{fmtDate(p.valid_until)}</td>
                 <td className="whitespace-nowrap px-2 text-right">
-                  <Button size="icon" variant="ghost" aria-label="PDF" onClick={() => proposalPdf({ ...p, niche_name: nicheName(p.niche_id) })}><FileDown className="h-4 w-4 text-primary" /></Button>
-                  <Button size="icon" variant="ghost" aria-label="Editar" onClick={() => setEdit({ ...p, company: p.company ?? "", niche_id: p.niche_id ?? "", bottlenecks: p.bottlenecks ?? "", solution: p.solution ?? "" })}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" aria-label="PDF" onClick={() => makePdf(p)}><FileDown className="h-4 w-4 text-primary" /></Button>
+                  <Button size="icon" variant="ghost" aria-label="Editar" onClick={() => setEdit({ ...p, company: p.company ?? "", niche_id: p.niche_id ?? "", bottlenecks: p.bottlenecks ?? "", solution: p.solution ?? "", sub_niche: p.sub_niche ?? "", city: p.city ?? "", district: p.district ?? "", audience: p.audience ?? "", goal: p.goal ?? "", diagnosis_notes: p.diagnosis_notes ?? "", consultant: p.consultant ?? "Lucas Santos" })}><Pencil className="h-4 w-4" /></Button>
                   <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </td>
               </tr>
