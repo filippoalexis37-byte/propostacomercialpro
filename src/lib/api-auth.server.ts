@@ -50,7 +50,7 @@ export async function aiJson(prompt: string, signal?: AbortSignal): Promise<any>
       model: "openai/gpt-6-astra", input: [{ role: "user", content: prompt }], stream: true, store: false,
       reasoning: { effort: "low" }, text: { format: { type: "json_object" } },
     }),
-    signal,
+    ...(signal ? { signal } : {}),
   });
   if (!res.ok || !res.body) {
     const msg = res.status === 429 ? "Muitas requisições, tente em instantes." : res.status === 402 ? "Créditos de IA esgotados." : (await res.text()).slice(0, 300);
