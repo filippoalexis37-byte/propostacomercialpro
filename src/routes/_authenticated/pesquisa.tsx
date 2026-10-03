@@ -70,7 +70,7 @@ function Pesquisa() {
         ))}
       </div>
       <div className="panel grid gap-4 p-5 sm:grid-cols-2">
-        {[["company", "Empresa cliente"], ["niche", "Nicho *"], ["city", "Cidade *"], ["district", "Bairro/região"], ["services", "Serviços da empresa"], ["audience", "Público-alvo"]].map(([k, l]) => (
+        {[["company", "Empresa cliente"], ["niche", "Nicho *"], ["city", "Cidade *"], ["district", "Bairro/região"], ["services", "Serviços da empresa"], ["audience", "Público-alvo"]].map(([k = "", l]) => (
           <div key={k}><Label className="mb-1.5 block text-xs text-muted-foreground">{l}</Label><Input value={(f as any)[k]} onChange={(e) => set(k, e.target.value)} /></div>
         ))}
         <div className="sm:col-span-2"><Label className="mb-1.5 block text-xs text-muted-foreground">Observações (o que você já sabe do cliente)</Label><Textarea rows={3} value={f.notes} onChange={(e) => set("notes", e.target.value)} /></div>
