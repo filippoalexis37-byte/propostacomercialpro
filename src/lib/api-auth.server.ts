@@ -29,7 +29,7 @@ export async function searchPlaces(query: string, max = 10): Promise<Place[]> {
     body: JSON.stringify({ textQuery: query, pageSize: Math.min(max, 20), languageCode: "pt-BR", regionCode: "BR" }),
   });
   if (!res.ok) throw new Error(`Google Maps [${res.status}]: ${(await res.text()).slice(0, 300)}`);
-  const j = (await res.json()) as { places?: Record<string, any>[] }; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const j = (await res.json()) as { places?: any[] }; // eslint-disable-line @typescript-eslint/no-explicit-any
   return (j.places ?? []).map((p) => ({
     id: p.id, name: p.displayName?.text ?? "", address: p.formattedAddress ?? "", phone: p.nationalPhoneNumber ?? "",
     website: p.websiteUri ?? "", rating: p.rating ?? null, reviews: p.userRatingCount ?? null, maps: p.googleMapsUri ?? "",

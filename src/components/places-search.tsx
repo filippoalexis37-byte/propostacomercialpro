@@ -11,7 +11,7 @@ type Place = { id: string; name: string; address: string; phone: string; website
 
 function cityOf(addr: string) {
   const m = addr.match(/,\s*([^,-]+?)\s*-\s*([A-Z]{2})\b/);
-  return m ? { city: m[1].trim(), state: m[2] } : { city: "", state: "" };
+  return m ? { city: (m[1] ?? "").trim(), state: m[2] ?? "" } : { city: "", state: "" };
 }
 
 export function PlacesSearch() {
