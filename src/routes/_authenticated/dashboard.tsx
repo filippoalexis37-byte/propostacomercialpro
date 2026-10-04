@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { db, brl } from "@/lib/db";
 import { PageHeader } from "@/components/crud-page";
 import { pageHead } from "@/lib/meta";
+import { FollowupAlerts } from "@/components/followup-alerts";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: pageHead("Painel", "Indicadores comerciais."),
@@ -37,6 +38,7 @@ function Dashboard() {
   return (
     <div>
       <PageHeader title="Painel" subtitle="Visão geral da operação comercial." />
+      <FollowupAlerts />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map(([t, v]) => (
           <div key={String(t)} className="panel p-6">
