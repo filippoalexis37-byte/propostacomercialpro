@@ -133,7 +133,9 @@ function Propostas() {
         subject: `Proposta Comercial Santos MktPro — ${p.company || p.client_name}`,
         message: `Olá, ${p.client_name}!\n\nConforme conversamos, segue em anexo a proposta comercial da Santos MktPro para ${p.company || "sua empresa"}.\n\nFico à disposição para tirar qualquer dúvida.\n\nAbraço,\n${p.consultant || "Lucas Santos"}\nSantos MktPro`,
       });
-      toast.success("Proposta enviada para " + to, { id });
+      await db.from("proposals").update({ sent_at: new Date().toISOString(), sent_to: to, followup_at: new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10), followup_done: false }).eq("id", p.id);
+      qc.invalidateQueries({ queryKey: ["proposals"] }); qc.invalidateQueries({ queryKey: ["followup-alerts"] });
+      toast.success("Proposta enviada para " + to + " — follow-up em 3 dias", { id });
     } catch (e: any) { toast.error(e.message, { id }); }
   }
 
@@ -260,17 +262,21 @@ function Propostas() {
       <div className="panel overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-            <th className="px-4 py-3">Nº</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Nicho</th><th className="px-4 py-3">Total</th><th className="px-4 py-3">Validade</th><th />
+            <th className="px-4 py-3">Nº</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Nicho</th><th className="px-4 py-3">Total</th><th className="px-4 py-3">E-mail</th><th className="px-4 py-3">Follow-up</th><th />
           </tr></thead>
           <tbody>
-            {list.length === 0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Nenhuma proposta ainda.</td></tr>}
+            {list.length === 0 && <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Nenhuma proposta ainda.</td></tr>}
             {list.map((p: any) => (
               <tr key={p.id} className="border-b border-border/60 last:border-0">
                 <td className="px-4 py-3 text-muted-foreground">{p.number}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{p.client_name}<div className="text-xs text-muted-foreground">{p.company}</div></td>
                 <td className="px-4 py-3 text-muted-foreground">{nicheName(p.niche_id) ?? "—"}</td>
                 <td className="px-4 py-3 text-foreground">{brl(p.total)}</td>
-                <td className="px-4 py-3 text-muted-foreground">{fmtDate(p.valid_until)}</td>
+                <td className="px-4 py-3 text-xs">{p.sent_at ? <span className="text-success">✓ Enviada {fmtDate(p.sent_at)}<div className="text-muted-foreground">{p.sent_to}</div></span> : <span className="text-muted-foreground">Não enviada</span>}</td>
+                <td className="px-4 py-3">
+                  <input type="date" className="rounded border border-input bg-background px-2 py-1 text-xs text-foreground" value={p.followup_at ?? ""} onChange={async (e) => { await db.from("proposals").update({ followup_at: e.target.value || null, followup_done: false }).eq("id", p.id); qc.invalidateQueries({ queryKey: ["proposals"] }); qc.invalidateQueries({ queryKey: ["followup-alerts"] }); }} />
+                  {p.followup_done && <div className="text-xs text-success">✓ feito</div>}
+                </td>
                 <td className="whitespace-nowrap px-2 text-right">
                   <Button size="icon" variant="ghost" aria-label="PDF" onClick={() => makePdf(p)}><FileDown className="h-4 w-4 text-primary" /></Button>
                   <Button size="icon" variant="ghost" aria-label="Enviar por e-mail" onClick={() => sendEmail(p)}><Mail className="h-4 w-4 text-primary" /></Button>

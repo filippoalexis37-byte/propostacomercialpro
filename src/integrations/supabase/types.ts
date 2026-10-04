@@ -696,12 +696,16 @@ export type Database = {
           diagnosis_notes: string | null
           discount_percent: number
           district: string | null
+          followup_at: string | null
+          followup_done: boolean
           goal: string | null
           id: string
           items: Json
           niche_id: string | null
           notes: string | null
           number: number
+          sent_at: string | null
+          sent_to: string | null
           solution: string | null
           sub_niche: string | null
           total: number
@@ -720,12 +724,16 @@ export type Database = {
           diagnosis_notes?: string | null
           discount_percent?: number
           district?: string | null
+          followup_at?: string | null
+          followup_done?: boolean
           goal?: string | null
           id?: string
           items?: Json
           niche_id?: string | null
           notes?: string | null
           number?: number
+          sent_at?: string | null
+          sent_to?: string | null
           solution?: string | null
           sub_niche?: string | null
           total?: number
@@ -744,12 +752,16 @@ export type Database = {
           diagnosis_notes?: string | null
           discount_percent?: number
           district?: string | null
+          followup_at?: string | null
+          followup_done?: boolean
           goal?: string | null
           id?: string
           items?: Json
           niche_id?: string | null
           notes?: string | null
           number?: number
+          sent_at?: string | null
+          sent_to?: string | null
           solution?: string | null
           sub_niche?: string | null
           total?: number
