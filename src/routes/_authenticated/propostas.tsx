@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { FileDown, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { FileDown, Mail, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { toast } from "sonner";
 import { db, brl, fmtDate } from "@/lib/db";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { pageHead } from "@/lib/meta";
-import { proposalPdf, documentPdf, type ProposalItem } from "@/lib/pdf";
+import { proposalPdf, documentPdf, capturePdf, type ProposalItem } from "@/lib/pdf";
 
 export const Route = createFileRoute("/_authenticated/propostas")({
   head: pageHead("Propostas", "Propostas comerciais em PDF com gargalos do nicho."),
@@ -120,6 +120,21 @@ function Propostas() {
         { title: "Condições", body: `${p.notes ?? ""}${p.valid_until ? `\nProposta válida até ${fmtDate(p.valid_until)}.` : ""}` },
       ],
     });
+  }
+
+  async function sendEmail(p: any) {
+    const to = prompt(`E-mail de ${p.client_name}:`);
+    if (!to) return;
+    const id = toast.loading("Enviando proposta...");
+    try {
+      const file = await capturePdf(() => makePdf(p));
+      await apiPost("/api/send-proposal", {
+        to, filename: file.filename, pdfBase64: file.base64,
+        subject: `Proposta Comercial Santos MktPro — ${p.company || p.client_name}`,
+        message: `Olá, ${p.client_name}!\n\nConforme conversamos, segue em anexo a proposta comercial da Santos MktPro para ${p.company || "sua empresa"}.\n\nFico à disposição para tirar qualquer dúvida.\n\nAbraço,\n${p.consultant || "Lucas Santos"}\nSantos MktPro`,
+      });
+      toast.success("Proposta enviada para " + to, { id });
+    } catch (e: any) { toast.error(e.message, { id }); }
   }
 
   async function remove(id: string) {
@@ -258,6 +273,7 @@ function Propostas() {
                 <td className="px-4 py-3 text-muted-foreground">{fmtDate(p.valid_until)}</td>
                 <td className="whitespace-nowrap px-2 text-right">
                   <Button size="icon" variant="ghost" aria-label="PDF" onClick={() => makePdf(p)}><FileDown className="h-4 w-4 text-primary" /></Button>
+                  <Button size="icon" variant="ghost" aria-label="Enviar por e-mail" onClick={() => sendEmail(p)}><Mail className="h-4 w-4 text-primary" /></Button>
                   <Button size="icon" variant="ghost" aria-label="Editar" onClick={() => setEdit({ ...p, company: p.company ?? "", niche_id: p.niche_id ?? "", bottlenecks: p.bottlenecks ?? "", solution: p.solution ?? "", sub_niche: p.sub_niche ?? "", city: p.city ?? "", district: p.district ?? "", audience: p.audience ?? "", goal: p.goal ?? "", diagnosis_notes: p.diagnosis_notes ?? "", consultant: p.consultant ?? "Lucas Santos" })}><Pencil className="h-4 w-4" /></Button>
                   <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </td>
