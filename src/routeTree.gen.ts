@@ -34,6 +34,7 @@ import { Route as ApiMarketResearchRouteImport } from './routes/api/market-resea
 import { Route as ApiNicheAiRouteImport } from './routes/api/niche-ai'
 import { Route as ApiPlacesRouteImport } from './routes/api/places'
 import { Route as ApiProposalAiRouteImport } from './routes/api/proposal-ai'
+import { Route as ApiSendProposalRouteImport } from './routes/api/send-proposal'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -161,6 +162,11 @@ const ApiProposalAiRoute = ApiProposalAiRouteImport.update({
   path: '/api/proposal-ai',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSendProposalRoute = ApiSendProposalRouteImport.update({
+  id: '/api/send-proposal',
+  path: '/api/send-proposal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/api/niche-ai': typeof ApiNicheAiRoute
   '/api/places': typeof ApiPlacesRoute
   '/api/proposal-ai': typeof ApiProposalAiRoute
+  '/api/send-proposal': typeof ApiSendProposalRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/api/niche-ai': typeof ApiNicheAiRoute
   '/api/places': typeof ApiPlacesRoute
   '/api/proposal-ai': typeof ApiProposalAiRoute
+  '/api/send-proposal': typeof ApiSendProposalRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/api/niche-ai': typeof ApiNicheAiRoute
   '/api/places': typeof ApiPlacesRoute
   '/api/proposal-ai': typeof ApiProposalAiRoute
+  '/api/send-proposal': typeof ApiSendProposalRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/api/niche-ai'
     | '/api/places'
     | '/api/proposal-ai'
+    | '/api/send-proposal'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/api/niche-ai'
     | '/api/places'
     | '/api/proposal-ai'
+    | '/api/send-proposal'
   id:
     | '__root__'
     | '/'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/api/niche-ai'
     | '/api/places'
     | '/api/proposal-ai'
+    | '/api/send-proposal'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -332,6 +344,7 @@ export interface RootRouteChildren {
   ApiNicheAiRoute: typeof ApiNicheAiRoute
   ApiPlacesRoute: typeof ApiPlacesRoute
   ApiProposalAiRoute: typeof ApiProposalAiRoute
+  ApiSendProposalRoute: typeof ApiSendProposalRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -511,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProposalAiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/send-proposal': {
+      id: '/api/send-proposal'
+      path: '/api/send-proposal'
+      fullPath: '/api/send-proposal'
+      preLoaderRoute: typeof ApiSendProposalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -567,6 +587,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNicheAiRoute: ApiNicheAiRoute,
   ApiPlacesRoute: ApiPlacesRoute,
   ApiProposalAiRoute: ApiProposalAiRoute,
+  ApiSendProposalRoute: ApiSendProposalRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
