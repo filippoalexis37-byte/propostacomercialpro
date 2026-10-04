@@ -207,7 +207,7 @@ export async function documentPdf(opts: { title: string; subtitle?: string; clie
 let CAPTURE = false;
 let captured: { base64: string; filename: string } | null = null;
 function finish(doc: jsPDF, filename: string) {
-  if (CAPTURE) { captured = { base64: doc.output("datauristring").split(",")[1], filename }; return; }
+  if (CAPTURE) { captured = { base64: doc.output("datauristring").split(",")[1] ?? "", filename }; return; }
   doc.save(filename);
 }
 /** Runs a PDF generator and returns the file as base64 instead of downloading it. */
