@@ -274,7 +274,7 @@ function Propostas() {
                 <td className="px-4 py-3 text-foreground">{brl(p.total)}</td>
                 <td className="px-4 py-3 text-xs">{p.sent_at ? <span className="text-success">✓ Enviada {fmtDate(p.sent_at)}<div className="text-muted-foreground">{p.sent_to}</div></span> : <span className="text-muted-foreground">Não enviada</span>}</td>
                 <td className="px-4 py-3">
-                  <input type="date" className="rounded border border-input bg-background px-2 py-1 text-xs text-foreground" value={p.followup_at ?? ""} onChange={async (e) => { await db.from("proposals").update({ followup_at: e.target.value || null, followup_done: false }).eq("id", p.id); qc.invalidateQueries({ queryKey: ["proposals"] }); qc.invalidateQueries({ queryKey: ["followup-alerts"] }); }} />
+                  <input type="date" className="rounded border border-input bg-background px-2 py-1 text-xs text-foreground [color-scheme:dark]" key={p.followup_at ?? "none"} defaultValue={p.followup_at ?? ""} onBlur={async (e) => { if ((e.target.value || null) === (p.followup_at ?? null)) return; await db.from("proposals").update({ followup_at: e.target.value || null, followup_done: false }).eq("id", p.id); qc.invalidateQueries({ queryKey: ["proposals"] }); qc.invalidateQueries({ queryKey: ["followup-alerts"] }); }} />
                   {p.followup_done && <div className="text-xs text-success">✓ feito</div>}
                 </td>
                 <td className="whitespace-nowrap px-2 text-right">
