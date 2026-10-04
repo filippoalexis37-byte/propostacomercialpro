@@ -1,0 +1,1 @@
+ALTER TABLE public.proposals ADD COLUMN IF NOT EXISTS sent_at timestamptz, ADD COLUMN IF NOT EXISTS sent_to text, ADD COLUMN IF NOT EXISTS followup_at date, ADD COLUMN IF NOT EXISTS followup_done boolean NOT NULL DEFAULT false;
