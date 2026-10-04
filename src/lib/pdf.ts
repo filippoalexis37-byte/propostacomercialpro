@@ -122,7 +122,7 @@ export async function proposalPdf(p: Proposal) {
   if (p.notes) y = section(doc, y, "Condições e observações", p.notes);
   if (p.valid_until) { doc.setFontSize(10); doc.text(`Proposta válida até ${fmtDate(p.valid_until)}.`, 14, y); }
   footer(doc, s);
-  doc.save(`proposta-${p.client_name.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+  return finish(doc, `proposta-${p.client_name.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
 
 export type Receipt = {
@@ -156,7 +156,7 @@ export async function receiptPdf(r: Receipt) {
   doc.text("Lucas Santos — " + (s.company_name || "Santos MktPro"), w / 2, 156, { align: "center" });
   if (s.cnpj) doc.text(`CNPJ ${s.cnpj}`, w / 2, 162, { align: "center" });
   footer(doc, s);
-  doc.save(`recibo-${r.client_name.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+  return finish(doc, `recibo-${r.client_name.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
 
 export type DocSection = { title: string; body?: string; table?: { head: string[]; rows: string[][] } };
@@ -201,5 +201,19 @@ export async function documentPdf(opts: { title: string; subtitle?: string; clie
   }
   const pages = doc.getNumberOfPages();
   for (let i = 2; i <= pages; i++) { doc.setPage(i); footer(doc, s); }
-  doc.save(opts.filename);
+  return finish(doc, opts.filename);
+}
+
+let CAPTURE = false;
+let captured: { base64: string; filename: string } | null = null;
+function finish(doc: jsPDF, filename: string) {
+  if (CAPTURE) { captured = { base64: doc.output("datauristring").split(",")[1], filename }; return; }
+  doc.save(filename);
+}
+/** Runs a PDF generator and returns the file as base64 instead of downloading it. */
+export async function capturePdf(fn: () => Promise<unknown>) {
+  CAPTURE = true; captured = null;
+  try { await fn(); } finally { CAPTURE = false; }
+  if (!captured) throw new Error("Falha ao gerar PDF");
+  return captured as { base64: string; filename: string };
 }
