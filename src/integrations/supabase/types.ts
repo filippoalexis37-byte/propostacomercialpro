@@ -71,6 +71,39 @@ export type Database = {
           },
         ]
       }
+      cadences: {
+        Row: {
+          channel: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          objective: string | null
+          steps: Json
+          updated_at: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          objective?: string | null
+          steps?: Json
+          updated_at?: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          objective?: string | null
+          steps?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           company_id: string | null
@@ -144,22 +177,44 @@ export type Database = {
         Row: {
           address: string | null
           address_number: string | null
+          attempts: number
+          cadence_id: string | null
+          cadence_step: number
+          category: string | null
           city: string | null
+          closed_value: number | null
           cnpj: string | null
+          contact_role: string | null
           created_at: string
           district: string | null
           email: string | null
           facebook: string | null
+          first_prospect_at: string | null
+          gbp_url: string | null
           id: string
           instagram: string | null
           is_demo: boolean
+          last_attempt_at: string | null
+          last_result: string | null
+          linkedin: string | null
+          list_id: string | null
           name: string
+          next_contact_at: string | null
           niche: string | null
           notes: string | null
           owner_name: string | null
           phone: string | null
+          potential: string
+          potential_value: number | null
+          preferred_channel: string | null
+          priority: string
+          prospect_status: string
+          qualification: Json
+          services_interest: string[]
+          source: string | null
           state: string | null
           sub_niche: string | null
+          temperature: string
           trade_name: string | null
           updated_at: string
           website: string | null
@@ -169,22 +224,44 @@ export type Database = {
         Insert: {
           address?: string | null
           address_number?: string | null
+          attempts?: number
+          cadence_id?: string | null
+          cadence_step?: number
+          category?: string | null
           city?: string | null
+          closed_value?: number | null
           cnpj?: string | null
+          contact_role?: string | null
           created_at?: string
           district?: string | null
           email?: string | null
           facebook?: string | null
+          first_prospect_at?: string | null
+          gbp_url?: string | null
           id?: string
           instagram?: string | null
           is_demo?: boolean
+          last_attempt_at?: string | null
+          last_result?: string | null
+          linkedin?: string | null
+          list_id?: string | null
           name: string
+          next_contact_at?: string | null
           niche?: string | null
           notes?: string | null
           owner_name?: string | null
           phone?: string | null
+          potential?: string
+          potential_value?: number | null
+          preferred_channel?: string | null
+          priority?: string
+          prospect_status?: string
+          qualification?: Json
+          services_interest?: string[]
+          source?: string | null
           state?: string | null
           sub_niche?: string | null
+          temperature?: string
           trade_name?: string | null
           updated_at?: string
           website?: string | null
@@ -194,29 +271,66 @@ export type Database = {
         Update: {
           address?: string | null
           address_number?: string | null
+          attempts?: number
+          cadence_id?: string | null
+          cadence_step?: number
+          category?: string | null
           city?: string | null
+          closed_value?: number | null
           cnpj?: string | null
+          contact_role?: string | null
           created_at?: string
           district?: string | null
           email?: string | null
           facebook?: string | null
+          first_prospect_at?: string | null
+          gbp_url?: string | null
           id?: string
           instagram?: string | null
           is_demo?: boolean
+          last_attempt_at?: string | null
+          last_result?: string | null
+          linkedin?: string | null
+          list_id?: string | null
           name?: string
+          next_contact_at?: string | null
           niche?: string | null
           notes?: string | null
           owner_name?: string | null
           phone?: string | null
+          potential?: string
+          potential_value?: number | null
+          preferred_channel?: string | null
+          priority?: string
+          prospect_status?: string
+          qualification?: Json
+          services_interest?: string[]
+          source?: string | null
           state?: string | null
           sub_niche?: string | null
+          temperature?: string
           trade_name?: string | null
           updated_at?: string
           website?: string | null
           whatsapp?: string | null
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "companies_cadence_fk"
+            columns: ["cadence_id"]
+            isOneToOne: false
+            referencedRelation: "cadences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companies_list_fk"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_lists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       generated_prompts: {
         Row: {
@@ -777,6 +891,98 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      prospect_attempts: {
+        Row: {
+          channel: string
+          company_id: string
+          contact_type: string | null
+          created_at: string
+          happened_at: string
+          id: string
+          message: string | null
+          next_contact_at: string | null
+          notes: string | null
+          owner: string | null
+          result: string
+          user_id: string | null
+          value: number | null
+        }
+        Insert: {
+          channel: string
+          company_id: string
+          contact_type?: string | null
+          created_at?: string
+          happened_at?: string
+          id?: string
+          message?: string | null
+          next_contact_at?: string | null
+          notes?: string | null
+          owner?: string | null
+          result: string
+          user_id?: string | null
+          value?: number | null
+        }
+        Update: {
+          channel?: string
+          company_id?: string
+          contact_type?: string | null
+          created_at?: string
+          happened_at?: string
+          id?: string
+          message?: string | null
+          next_contact_at?: string | null
+          notes?: string | null
+          owner?: string | null
+          result?: string
+          user_id?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_attempts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_lists: {
+        Row: {
+          city: string | null
+          created_at: string
+          id: string
+          name: string
+          niche: string | null
+          owner: string | null
+          region: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          niche?: string | null
+          owner?: string | null
+          region?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          niche?: string | null
+          owner?: string | null
+          region?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       receipts: {
         Row: {
