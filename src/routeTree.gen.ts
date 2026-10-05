@@ -28,6 +28,7 @@ import { Route as AuthenticatedPesquisaRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPrecificacaoRouteImport } from './routes/_authenticated/precificacao'
 import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated/prompts'
 import { Route as AuthenticatedPropostasRouteImport } from './routes/_authenticated/propostas'
+import { Route as AuthenticatedProspeccaoRouteImport } from './routes/_authenticated/prospeccao'
 import { Route as AuthenticatedRecibosRouteImport } from './routes/_authenticated/recibos'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
 import { Route as ApiMarketResearchRouteImport } from './routes/api/market-research'
@@ -132,6 +133,11 @@ const AuthenticatedPropostasRoute = AuthenticatedPropostasRouteImport.update({
   path: '/propostas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProspeccaoRoute = AuthenticatedProspeccaoRouteImport.update({
+  id: '/prospeccao',
+  path: '/prospeccao',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRecibosRoute = AuthenticatedRecibosRouteImport.update({
   id: '/recibos',
   path: '/recibos',
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/prompts': typeof AuthenticatedPromptsRoute
   '/propostas': typeof AuthenticatedPropostasRoute
+  '/prospeccao': typeof AuthenticatedProspeccaoRoute
   '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
   '/api/market-research': typeof ApiMarketResearchRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/prompts': typeof AuthenticatedPromptsRoute
   '/propostas': typeof AuthenticatedPropostasRoute
+  '/prospeccao': typeof AuthenticatedProspeccaoRoute
   '/recibos': typeof AuthenticatedRecibosRoute
   '/servicos': typeof AuthenticatedServicosRoute
   '/api/market-research': typeof ApiMarketResearchRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   '/_authenticated/precificacao': typeof AuthenticatedPrecificacaoRoute
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/propostas': typeof AuthenticatedPropostasRoute
+  '/_authenticated/prospeccao': typeof AuthenticatedProspeccaoRoute
   '/_authenticated/recibos': typeof AuthenticatedRecibosRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
   '/api/market-research': typeof ApiMarketResearchRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/precificacao'
     | '/prompts'
     | '/propostas'
+    | '/prospeccao'
     | '/recibos'
     | '/servicos'
     | '/api/market-research'
@@ -299,6 +309,7 @@ export interface FileRouteTypes {
     | '/precificacao'
     | '/prompts'
     | '/propostas'
+    | '/prospeccao'
     | '/recibos'
     | '/servicos'
     | '/api/market-research'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/_authenticated/precificacao'
     | '/_authenticated/prompts'
     | '/_authenticated/propostas'
+    | '/_authenticated/prospeccao'
     | '/_authenticated/recibos'
     | '/_authenticated/servicos'
     | '/api/market-research'
@@ -482,6 +494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPropostasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/prospeccao': {
+      id: '/_authenticated/prospeccao'
+      path: '/prospeccao'
+      fullPath: '/prospeccao'
+      preLoaderRoute: typeof AuthenticatedProspeccaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/recibos': {
       id: '/_authenticated/recibos'
       path: '/recibos'
@@ -551,6 +570,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPrecificacaoRoute: typeof AuthenticatedPrecificacaoRoute
   AuthenticatedPromptsRoute: typeof AuthenticatedPromptsRoute
   AuthenticatedPropostasRoute: typeof AuthenticatedPropostasRoute
+  AuthenticatedProspeccaoRoute: typeof AuthenticatedProspeccaoRoute
   AuthenticatedRecibosRoute: typeof AuthenticatedRecibosRoute
   AuthenticatedServicosRoute: typeof AuthenticatedServicosRoute
 }
@@ -572,6 +592,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPrecificacaoRoute: AuthenticatedPrecificacaoRoute,
   AuthenticatedPromptsRoute: AuthenticatedPromptsRoute,
   AuthenticatedPropostasRoute: AuthenticatedPropostasRoute,
+  AuthenticatedProspeccaoRoute: AuthenticatedProspeccaoRoute,
   AuthenticatedRecibosRoute: AuthenticatedRecibosRoute,
   AuthenticatedServicosRoute: AuthenticatedServicosRoute,
 }
