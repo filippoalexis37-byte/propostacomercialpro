@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FileDown, Mail, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { toast } from "sonner";
@@ -66,6 +66,21 @@ function Propostas() {
       ];
     },
   });
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem("proposal-prefill");
+    if (!raw || !niches.length || !services.length) return;
+    sessionStorage.removeItem("proposal-prefill");
+    const x = JSON.parse(raw);
+    let p: P = { ...empty(), client_name: x.client_name ?? "", company: x.company ?? "", sub_niche: x.sub_niche ?? "", city: x.city ?? "", district: x.district ?? "", goal: x.goal ?? "", diagnosis_notes: x.diagnosis_notes ?? "" };
+    const n = niches.find((n: any) => n.name?.toLowerCase() === String(x.niche ?? "").toLowerCase());
+    if (n) p = applyNiche(n.id, p);
+    p.items = (x.services ?? []).map((name: string) => {
+      const s = services.find((s: any) => s.name.toLowerCase().includes(name.toLowerCase()));
+      return s ? { name: s.name, price: Number(s.promo_price || s.price), qty: 1 } : { name, price: 0, qty: 1 };
+    });
+    setEdit(p);
+  }, [niches, services]);
 
   const subtotal = (p: P) => p.items.reduce((a, i) => a + Number(i.price) * Number(i.qty), 0);
   const total = (p: P) => subtotal(p) * (1 - Number(p.discount_percent || 0) / 100);

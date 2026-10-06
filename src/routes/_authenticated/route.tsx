@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   LayoutDashboard, Users, Building2, BadgeCheck, CalendarClock, Briefcase, Calculator,
-  Package, Target, MessageSquareWarning, Sparkles, BellRing, Settings, LogOut, Menu, X, FileText, Receipt, Bot, Search, Handshake,
+  Package, Target, MessageSquareWarning, Sparkles, BellRing, Settings, LogOut, Menu, X, FileText, Receipt, Bot, Search, Handshake, Crosshair,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db";
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/_authenticated")({
 const NAV = [
   { group: "Comercial", items: [
     { to: "/dashboard", label: "Painel", icon: LayoutDashboard },
+    { to: "/prospeccao", label: "Prospecção B2B", icon: Crosshair },
     { to: "/leads", label: "Leads", icon: Users },
     { to: "/empresas", label: "Empresas", icon: Building2 },
     { to: "/clientes", label: "Clientes", icon: BadgeCheck },
