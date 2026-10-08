@@ -1,8 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { CrudPage } from "@/components/crud-page";
 import { pageHead } from "@/lib/meta";
-import { Calendar, Mail, ExternalLink } from "lucide-react";
+import { Calendar, Mail, ExternalLink, Key, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getOpenAIApiKey, setOpenAIApiKey } from "@/lib/openai";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: pageHead("Configurações", "Dados da empresa para documentos e integrações."),
@@ -10,6 +15,27 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 });
 
 function ConfiguracoesPage() {
+  const [apiKey, setApiKey] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const k = getOpenAIApiKey();
+    if (k && k.startsWith("sk-")) {
+      setApiKey(k);
+    }
+  }, []);
+
+  const handleSaveKey = () => {
+    if (!apiKey.trim().startsWith("sk-")) {
+      toast.error("Chave inválida. A chave da OpenAI deve começar com 'sk-'");
+      return;
+    }
+    setOpenAIApiKey(apiKey.trim());
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+    toast.success("Chave da OpenAI salva com sucesso no navegador!");
+  };
+
   return (
     <div className="space-y-6">
       {/* Box de Integração Google Agenda / Gmail */}
@@ -38,6 +64,44 @@ function ConfiguracoesPage() {
           >
             <ExternalLink className="h-3.5 w-3.5" /> Abrir Google Agenda
           </Button>
+        </div>
+      </div>
+
+      {/* Box de Integração OpenAI (Créditos de IA) */}
+      <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-foreground text-base">Créditos de IA (OpenAI)</h2>
+            <p className="text-xs text-muted-foreground">
+              Configure sua chave API oficial para utilizar seus próprios créditos da OpenAI no Assistente e na criação de Propostas.
+            </p>
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <Label className="text-xs text-muted-foreground">Chave API OpenAI (sk-...)</Label>
+          <div className="mt-1.5 flex flex-col sm:flex-row gap-2 max-w-xl">
+            <div className="relative flex-1">
+              <Key className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-proj-..."
+                className="pl-9 font-mono text-xs"
+              />
+            </div>
+            <Button onClick={handleSaveKey} className="gap-2 shrink-0">
+              {saved ? <Check className="h-4 w-4 text-green-400" /> : null}
+              {saved ? "Chave Salva!" : "Salvar Chave"}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1.5">
+            Sua chave fica armazenada de forma segura e conectada diretamente com a API da OpenAI.
+          </p>
         </div>
       </div>
 
