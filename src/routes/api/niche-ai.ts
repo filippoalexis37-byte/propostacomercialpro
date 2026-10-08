@@ -60,45 +60,51 @@ ${ctx}`;
           { role: "user", content: body.question },
         ];
 
-        const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`,
-            "Lovable-API-Key": process.env["LOVABLE_API_KEY"]!,
-            "X-Lovable-AIG-SDK": "fetch",
-          },
-          body: JSON.stringify({ model: "openai/gpt-6-astra", input, stream: true, store: false, reasoning: { effort: "low" } }),
-          signal: request.signal,
-        });
-        if (!res.ok || !res.body) {
-          const t = await res.text();
-          const msg = res.status === 429 ? "Muitas requisições, tente em instantes." : res.status === 402 ? "Créditos de IA esgotados." : t.slice(0, 300);
-          return new Response(msg, { status: res.status });
-        }
+import { openAiChatStream } from "@/lib/openai.server";
 
-        const decoder = new TextDecoder();
-        const encoder = new TextEncoder();
-        let buf = "";
-        const stream = res.body.pipeThrough(
-          new TransformStream<Uint8Array, Uint8Array>({
-            transform(chunk, ctrl) {
-              buf += decoder.decode(chunk, { stream: true });
-              const parts = buf.split("\n");
-              buf = parts.pop() ?? "";
-              for (const line of parts) {
-                if (!line.startsWith("data:")) continue;
-                const d = line.slice(5).trim();
-                if (!d || d === "[DONE]") continue;
-                try {
-                  const ev = JSON.parse(d);
-                  if (ev.type === "response.output_text.delta" && ev.delta) ctrl.enqueue(encoder.encode(ev.delta));
-                } catch { /* partial */ }
-              }
-            },
-          }),
-        );
-        return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache, no-transform" } });
+        try {
+          const stream = await openAiChatStream(input, { model: "gpt-4o-mini", signal: request.signal });
+          return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache, no-transform" } });
+        } catch (err: any) {
+          if (process.env["LOVABLE_API_KEY"]) {
+            const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`,
+                "Lovable-API-Key": process.env["LOVABLE_API_KEY"]!,
+                "X-Lovable-AIG-SDK": "fetch",
+              },
+              body: JSON.stringify({ model: "openai/gpt-4o-mini", input, stream: true, store: false, reasoning: { effort: "low" } }),
+              signal: request.signal,
+            });
+            if (res.ok && res.body) {
+              const decoder = new TextDecoder();
+              const encoder = new TextEncoder();
+              let buf = "";
+              const stream = res.body.pipeThrough(
+                new TransformStream<Uint8Array, Uint8Array>({
+                  transform(chunk, ctrl) {
+                    buf += decoder.decode(chunk, { stream: true });
+                    const parts = buf.split("\n");
+                    buf = parts.pop() ?? "";
+                    for (const line of parts) {
+                      if (!line.startsWith("data:")) continue;
+                      const d = line.slice(5).trim();
+                      if (!d || d === "[DONE]") continue;
+                      try {
+                        const ev = JSON.parse(d);
+                        if (ev.type === "response.output_text.delta" && ev.delta) ctrl.enqueue(encoder.encode(ev.delta));
+                      } catch { /* partial */ }
+                    }
+                  },
+                }),
+              );
+              return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache, no-transform" } });
+            }
+          }
+          return new Response(err.message || "Erro no streaming de IA", { status: 502 });
+        }
       },
     },
   },

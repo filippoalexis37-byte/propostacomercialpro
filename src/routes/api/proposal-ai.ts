@@ -54,50 +54,54 @@ REGRAS
 Responda SOMENTE com JSON válido, sem markdown, neste formato:
 {"about":"parágrafo sobre a Santos MktPro","summary":"resumo executivo personalizado (2 parágrafos)","diagnosis":[{"area":"","situation":"","impact":"","opportunity":"","priority":"Alta|Média|Baixa"}],"needs":["..."],"objectives":["..."],"strategy":"como os serviços trabalham juntos; uma linha por serviço no formato 'Serviço → papel'","services":[{"name":"nome exato do serviço","objective":"","what":"atividades separadas por \\n","how":"","why":"","tracking":"","kpis":"indicadores separados por vírgula"}],"process":["etapa 1: ...","etapa 2: ..."],"followup":"como será o acompanhamento e relatórios"}`;
 
-        const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`,
-            "Lovable-API-Key": process.env["LOVABLE_API_KEY"]!,
-            "X-Lovable-AIG-SDK": "fetch",
-          },
-          body: JSON.stringify({
-            model: "openai/gpt-6-astra",
-            input: [{ role: "user", content: prompt }],
-            stream: true,
-            store: false,
-            reasoning: { effort: "low" },
-            text: { format: { type: "json_object" } },
-          }),
-          signal: request.signal,
-        });
-        if (!res.ok || !res.body) {
-          const msg = res.status === 429 ? "Muitas requisições, tente em instantes." : res.status === 402 ? "Créditos de IA esgotados." : (await res.text()).slice(0, 300);
-          return new Response(msg, { status: res.status });
-        }
-        const reader = res.body.getReader();
-        const dec = new TextDecoder();
-        let buf = "", out = "";
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += dec.decode(value, { stream: true });
-          const lines = buf.split("\n");
-          buf = lines.pop() ?? "";
-          for (const l of lines) {
-            if (!l.startsWith("data:")) continue;
-            try {
-              const ev = JSON.parse(l.slice(5).trim());
-              if (ev.type === "response.output_text.delta") out += ev.delta;
-            } catch { /* ignore */ }
-          }
-        }
-        const json = out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1);
+import { openAiChatJson } from "@/lib/openai.server";
+
         try {
-          return Response.json(JSON.parse(json));
-        } catch {
-          return new Response("A IA retornou um formato inválido, tente novamente.", { status: 502 });
+          const json = await openAiChatJson(prompt, { model: "gpt-4o", signal: request.signal });
+          return Response.json(json);
+        } catch (err: any) {
+          if (process.env["LOVABLE_API_KEY"]) {
+            const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`,
+                "Lovable-API-Key": process.env["LOVABLE_API_KEY"]!,
+                "X-Lovable-AIG-SDK": "fetch",
+              },
+              body: JSON.stringify({
+                model: "openai/gpt-4o-mini",
+                input: [{ role: "user", content: prompt }],
+                stream: true,
+                store: false,
+                reasoning: { effort: "low" },
+                text: { format: { type: "json_object" } },
+              }),
+              signal: request.signal,
+            });
+            if (res.ok && res.body) {
+              const reader = res.body.getReader();
+              const dec = new TextDecoder();
+              let buf = "", out = "";
+              for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const lines = buf.split("\n");
+                buf = lines.pop() ?? "";
+                for (const l of lines) {
+                  if (!l.startsWith("data:")) continue;
+                  try {
+                    const ev = JSON.parse(l.slice(5).trim());
+                    if (ev.type === "response.output_text.delta") out += ev.delta;
+                  } catch { /* ignore */ }
+                }
+              }
+              const json = out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1);
+              return Response.json(JSON.parse(json));
+            }
+          }
+          return new Response(err.message || "Erro ao processar IA", { status: 502 });
         }
       },
     },

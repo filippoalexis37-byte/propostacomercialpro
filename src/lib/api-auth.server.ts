@@ -37,38 +37,46 @@ export async function searchPlaces(query: string, max = 10): Promise<Place[]> {
   }));
 }
 
+import { openAiChatJson } from "@/lib/openai.server";
+
 export async function aiJson(prompt: string, signal?: AbortSignal): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`,
-      "Lovable-API-Key": process.env["LOVABLE_API_KEY"]!,
-      "X-Lovable-AIG-SDK": "fetch",
-    },
-    body: JSON.stringify({
-      model: "openai/gpt-6-astra", input: [{ role: "user", content: prompt }], stream: true, store: false,
-      reasoning: { effort: "low" }, text: { format: { type: "json_object" } },
-    }),
-    ...(signal ? { signal } : {}),
-  });
-  if (!res.ok || !res.body) {
-    const msg = res.status === 429 ? "Muitas requisições, tente em instantes." : res.status === 402 ? "Créditos de IA esgotados." : (await res.text()).slice(0, 300);
-    throw Object.assign(new Error(msg), { status: res.status });
-  }
-  const reader = res.body.getReader();
-  const dec = new TextDecoder();
-  let buf = "", out = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    const lines = buf.split("\n");
-    buf = lines.pop() ?? "";
-    for (const l of lines) {
-      if (!l.startsWith("data:")) continue;
-      try { const ev = JSON.parse(l.slice(5).trim()); if (ev.type === "response.output_text.delta") out += ev.delta; } catch { /* */ }
+  try {
+    return await openAiChatJson(prompt, { signal });
+  } catch (err: any) {
+    // Se houver Lovable API Key configurada, tenta fallback
+    if (process.env["LOVABLE_API_KEY"]) {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`,
+          "Lovable-API-Key": process.env["LOVABLE_API_KEY"]!,
+          "X-Lovable-AIG-SDK": "fetch",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini", input: [{ role: "user", content: prompt }], stream: true, store: false,
+          reasoning: { effort: "low" }, text: { format: { type: "json_object" } },
+        }),
+        ...(signal ? { signal } : {}),
+      });
+      if (res.ok && res.body) {
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = "", out = "";
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop() ?? "";
+          for (const l of lines) {
+            if (!l.startsWith("data:")) continue;
+            try { const ev = JSON.parse(l.slice(5).trim()); if (ev.type === "response.output_text.delta") out += ev.delta; } catch { /* */ }
+          }
+        }
+        return JSON.parse(out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1));
+      }
     }
+    throw err;
   }
-  return JSON.parse(out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1));
 }
