@@ -4,13 +4,10 @@ import { useState } from "react";
 import {
   LayoutDashboard, Users, Building2, BadgeCheck, CalendarClock, Briefcase, Calculator,
   Package, Target, MessageSquareWarning, Sparkles, BellRing, Settings, LogOut, Menu, X,
-  FileText, Receipt, Bot, Search, Handshake, Crosshair, Video, Lock, ShieldCheck,
+  FileText, Receipt, Bot, Search, Handshake, Crosshair, Video, Lock,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db";
-
-const MASTER_ADMIN_EMAIL = "lucasmktpro158@gmail.com";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -56,39 +53,6 @@ function Layout() {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
   const navigate = useNavigate();
-
-  async function signOut() {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
-
-  // Cadeado de bloqueio para outros e-mails
-  if (user.email?.toLowerCase().trim() !== MASTER_ADMIN_EMAIL) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background bg-app-gradient p-4">
-        <div className="panel max-w-md w-full p-8 text-center border border-amber-500/30 shadow-2xl">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
-            <Lock className="h-8 w-8" />
-          </div>
-          <h2 className="font-display text-xl font-bold text-foreground">Acesso Bloqueado</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Este sistema possui cadeado de segurança e é de uso exclusivo do administrador (
-            <strong className="text-foreground">{MASTER_ADMIN_EMAIL}</strong>).
-          </p>
-          <div className="mt-3 rounded bg-muted/50 p-2 text-xs text-muted-foreground">
-            Conectado atualmente como: <span className="font-mono text-foreground">{user.email}</span>
-          </div>
-          <Button className="mt-6 w-full gap-2" onClick={signOut}>
-            <LogOut className="h-4 w-4" />
-            Sair e entrar como Administrador
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const { data: profile } = useQuery({
     queryKey: ["me", user.id],
     queryFn: async () => {
@@ -99,6 +63,13 @@ function Layout() {
       return { name: p?.full_name || user.email, roles: (r ?? []).map((x: { role: string }) => x.role) };
     },
   });
+
+  async function signOut() {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
 
   const sidebar = (
     <aside className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar">
@@ -131,12 +102,9 @@ function Layout() {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-1.5 font-medium text-foreground text-sm">
           <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-          <span className="truncate">{profile?.name || "Lucas Santos"}</span>
+          <span className="truncate">{profile?.name || user.email}</span>
         </div>
-        <div className="text-[11px] text-muted-foreground truncate">{user.email}</div>
-        <div className="mb-3 mt-1.5 inline-flex items-center gap-1 rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400 border border-amber-500/20">
-          <ShieldCheck className="h-3 w-3" /> Admin Master (Protegido)
-        </div>
+        <div className="mb-3 text-xs capitalize text-muted-foreground">{profile?.roles?.join(", ") || "administrador"}</div>
         <button onClick={signOut} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <LogOut className="h-4 w-4" /> Sair
         </button>
