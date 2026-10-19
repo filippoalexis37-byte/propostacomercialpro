@@ -6,6 +6,7 @@ import {
   Package, Target, MessageSquareWarning, Sparkles, BellRing, Settings, LogOut, Menu, X,
   FileText, Receipt, Bot, Search, Handshake, Crosshair, Video, Lock, ShieldCheck,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db";
 
@@ -16,11 +17,6 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
-    const email = data.user.email?.toLowerCase().trim();
-    if (email && email !== MASTER_ADMIN_EMAIL) {
-      await supabase.auth.signOut();
-      throw redirect({ to: "/auth" });
-    }
     return { user: data.user };
   },
   component: Layout,
@@ -60,6 +56,39 @@ function Layout() {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
   const navigate = useNavigate();
+
+  async function signOut() {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
+
+  // Cadeado de bloqueio para outros e-mails
+  if (user.email?.toLowerCase().trim() !== MASTER_ADMIN_EMAIL) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background bg-app-gradient p-4">
+        <div className="panel max-w-md w-full p-8 text-center border border-amber-500/30 shadow-2xl">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
+            <Lock className="h-8 w-8" />
+          </div>
+          <h2 className="font-display text-xl font-bold text-foreground">Acesso Bloqueado</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Este sistema possui cadeado de segurança e é de uso exclusivo do administrador (
+            <strong className="text-foreground">{MASTER_ADMIN_EMAIL}</strong>).
+          </p>
+          <div className="mt-3 rounded bg-muted/50 p-2 text-xs text-muted-foreground">
+            Conectado atualmente como: <span className="font-mono text-foreground">{user.email}</span>
+          </div>
+          <Button className="mt-6 w-full gap-2" onClick={signOut}>
+            <LogOut className="h-4 w-4" />
+            Sair e entrar como Administrador
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const { data: profile } = useQuery({
     queryKey: ["me", user.id],
     queryFn: async () => {
@@ -70,13 +99,6 @@ function Layout() {
       return { name: p?.full_name || user.email, roles: (r ?? []).map((x: { role: string }) => x.role) };
     },
   });
-
-  async function signOut() {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
 
   const sidebar = (
     <aside className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar">

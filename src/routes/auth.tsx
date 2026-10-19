@@ -5,11 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, ShieldCheck, ShieldAlert, MailCheck, KeyRound, Sparkles } from "lucide-react";
+import { Lock, ShieldCheck, ShieldAlert, MailCheck, UserPlus } from "lucide-react";
 
-export const MASTER_ADMIN_EMAIL = "lucasmktpro158@gmail.com";
+const MASTER_ADMIN_EMAIL = "lucasmktpro158@gmail.com";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Entrar — Santos MktPro" },
@@ -36,9 +37,6 @@ function AuthPage() {
         const userEmail = data.session.user?.email?.toLowerCase().trim();
         if (userEmail === MASTER_ADMIN_EMAIL) {
           navigate({ to: "/dashboard" });
-        } else {
-          supabase.auth.signOut();
-          setErrorMsg(`O e-mail ${userEmail} está bloqueado. Acesso restrito a ${MASTER_ADMIN_EMAIL}.`);
         }
       }
     });
@@ -51,9 +49,9 @@ function AuthPage() {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // Bloqueio rigoroso de outros e-mails com cadeado de segurança
+    // Bloqueio de outros e-mails
     if (cleanEmail !== MASTER_ADMIN_EMAIL) {
-      setErrorMsg(`Cadeado de segurança ativo: Este sistema é de uso exclusivo do administrador (${MASTER_ADMIN_EMAIL}). Outros e-mails não são permitidos.`);
+      setErrorMsg(`Cadeado de segurança ativo: Este sistema é de uso exclusivo do administrador (${MASTER_ADMIN_EMAIL}).`);
       toast.error("Acesso bloqueado: apenas o administrador tem acesso.", { icon: "🔒" });
       return;
     }
@@ -61,7 +59,6 @@ function AuthPage() {
     setLoading(true);
 
     try {
-      // 1. Tentar login direto com senha
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
@@ -73,28 +70,25 @@ function AuthPage() {
         return;
       }
 
-      // 2. Se a senha ou login falhou, analisar o motivo
       const rawMsg = error?.message || "";
       const lower = rawMsg.toLowerCase();
 
-      // Caso A: Usuário ainda não foi cadastrado no Supabase
+      // Se usuário não existir, tenta criar automaticamente
       if (lower.includes("invalid login credentials") || lower.includes("user not found") || lower.includes("invalid grant")) {
-        // Tentar cadastrar a conta de administrador automaticamente
         const signUpRes = await supabase.auth.signUp({
           email: cleanEmail,
           password,
           options: {
             data: { full_name: "Lucas Santos (Admin)" },
-            emailRedirectTo: window.location.origin + "/dashboard",
+            emailRedirectTo: typeof window !== "undefined" ? window.location.origin + "/dashboard" : undefined,
           },
         });
 
         if (signUpRes.error) {
-          // Se disse que usuário já está registrado, a senha pode ser diferente ou e-mail não confirmado
           if (signUpRes.error.message.toLowerCase().includes("already registered")) {
-            setErrorMsg("Credenciais incorretas ou seu e-mail ainda precisa ser confirmado no Gmail. Use o botão abaixo para receber o link direto de acesso no Gmail.");
+            setErrorMsg("Senha não coincide ou e-mail aguardando confirmação. Caso necessário, utilize o botão 'Receber link de acesso direto no Gmail' abaixo.");
           } else {
-            setErrorMsg(`Erro de registro no Supabase: ${signUpRes.error.message}`);
+            setErrorMsg(`Aviso do sistema: ${signUpRes.error.message}`);
           }
           setLoading(false);
           return;
@@ -105,15 +99,14 @@ function AuthPage() {
           navigate({ to: "/dashboard" });
           return;
         } else {
-          setInfoMsg("Conta de administrador criada com sucesso! Um link de confirmação foi enviado para " + cleanEmail + ". Abra seu Gmail e clique no link para validar.");
+          setInfoMsg(`Cadastro inicial realizado! Se for o primeiro acesso, verifique seu Gmail (${cleanEmail}) para confirmar o e-mail ou use o link de acesso direto.`);
           setLoading(false);
           return;
         }
       }
 
-      // Caso B: E-mail ainda não confirmado
       if (lower.includes("email not confirmed")) {
-        setErrorMsg("Seu e-mail ainda não foi confirmado. Verifique a caixa de entrada (ou spam) de " + cleanEmail + " para confirmar, ou clique em 'Enviar link de acesso direto'.");
+        setErrorMsg(`Seu e-mail ainda não foi confirmado. Abra a caixa de entrada do Gmail (${cleanEmail}) ou clique no botão de link de acesso direto.`);
         setLoading(false);
         return;
       }
@@ -126,7 +119,38 @@ function AuthPage() {
     }
   }
 
-  // Login direto sem senha (Magic Link enviado para o Gmail oficial)
+  // Criação explícita de conta
+  async function handleRegisterExplicit() {
+    setErrorMsg(null);
+    setInfoMsg(null);
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: MASTER_ADMIN_EMAIL,
+        password,
+        options: {
+          data: { full_name: "Lucas Santos (Admin)" },
+          emailRedirectTo: typeof window !== "undefined" ? window.location.origin + "/dashboard" : undefined,
+        },
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+      } else if (data.session) {
+        toast.success("Conta de administrador criada com sucesso!");
+        navigate({ to: "/dashboard" });
+      } else {
+        setInfoMsg(`Conta criada no Supabase! Verifique seu Gmail (${MASTER_ADMIN_EMAIL}) para ativar com 1 clique.`);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Erro ao registrar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Envio de link de acesso direto para o Gmail
   async function handleMagicLink() {
     setErrorMsg(null);
     setInfoMsg(null);
@@ -136,14 +160,14 @@ function AuthPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email: MASTER_ADMIN_EMAIL,
         options: {
-          emailRedirectTo: window.location.origin + "/dashboard",
+          emailRedirectTo: typeof window !== "undefined" ? window.location.origin + "/dashboard" : undefined,
         },
       });
 
       if (error) {
         setErrorMsg(`Erro ao enviar link para o Gmail: ${error.message}`);
       } else {
-        setInfoMsg(`Link de acesso enviado com sucesso para ${MASTER_ADMIN_EMAIL}! Basta abrir seu Gmail e clicar no botão para entrar direto.`);
+        setInfoMsg(`Link de acesso enviado com sucesso para ${MASTER_ADMIN_EMAIL}! Basta abrir seu Gmail e clicar para entrar direto.`);
         toast.success("Link enviado para seu Gmail!");
       }
     } catch (err: any) {
@@ -176,7 +200,7 @@ function AuthPage() {
                 Cadeado de Segurança Ativo
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                Acesso exclusivo para o Administrador Master (<span className="text-foreground font-mono font-medium">{MASTER_ADMIN_EMAIL}</span>). Outros e-mails são automaticamente rejeitados.
+                Acesso exclusivo para o Administrador Master (<span className="text-foreground font-mono font-medium">{MASTER_ADMIN_EMAIL}</span>). Outros e-mails são automaticamente bloqueados.
               </p>
             </div>
           </div>
@@ -226,10 +250,23 @@ function AuthPage() {
             />
           </div>
 
-          <Button type="submit" className="w-full gap-2" disabled={loading || otpLoading}>
-            <Lock className="h-4 w-4" />
-            {loading ? "Verificando credenciais..." : "Entrar no Sistema"}
-          </Button>
+          <div className="space-y-2 pt-1">
+            <Button type="submit" className="w-full gap-2" disabled={loading || otpLoading}>
+              <Lock className="h-4 w-4" />
+              {loading ? "Verificando credenciais..." : "Entrar no Sistema"}
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full gap-2 text-xs"
+              disabled={loading || otpLoading}
+              onClick={handleRegisterExplicit}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Primeiro Acesso: Ativar Senha de Administrador
+            </Button>
+          </div>
         </form>
 
         <div className="relative my-5">

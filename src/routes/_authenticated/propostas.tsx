@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/propostas")({
   component: Propostas,
 });
 
-export const DEFAULT_PROPOSAL_CONDITIONS = `Condições de Pagamento e Contratação:
+const DEFAULT_PROPOSAL_CONDITIONS = `Condições de Pagamento e Contratação:
 
 • Formas de pagamento: Pix ou cartão de crédito.
 • Pagamento: 50% na contratação e 50% na entrega do serviço.
