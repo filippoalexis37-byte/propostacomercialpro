@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
-import { Copy, Send, Square, Bot, Sparkles, Key } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import { Copy, Send, Square, Bot, Sparkles, Key, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { pageHead } from "@/lib/meta";
 import { streamOpenAICompletion, getOpenAIApiKey, setOpenAIApiKey } from "@/lib/openai";
@@ -36,6 +37,29 @@ function Assistente() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [busy, setBusy] = useState(false);
   const abort = useRef<AbortController | null>(null);
+
+  // Estado da chave API OpenAI
+  const [apiKeyInput, setApiKeyInput] = useState("");
+  const [showKeyCard, setShowKeyCard] = useState(true);
+  const [hasSavedKey, setHasSavedKey] = useState(false);
+
+  useEffect(() => {
+    const k = getOpenAIApiKey();
+    if (k && k.trim().startsWith("sk-")) {
+      setApiKeyInput(k);
+      setHasSavedKey(true);
+    }
+  }, []);
+
+  const handleSaveKey = () => {
+    if (!apiKeyInput.trim().startsWith("sk-")) {
+      toast.error("Chave inválida. A chave da OpenAI deve começar com 'sk-'");
+      return;
+    }
+    setOpenAIApiKey(apiKeyInput.trim());
+    setHasSavedKey(true);
+    toast.success("Chave OpenAI salva com sucesso! Agora você pode usar o Assistente.");
+  };
 
   // Busca detalhes do nicho caso selecionado
   const { data: currentNicheData } = useQuery({
@@ -81,6 +105,14 @@ Escreva em português do Brasil, tom humano, consultivo e persuasivo, pronto par
 
   async function ask() {
     if (!q.trim() || busy) return;
+
+    const currentKey = getOpenAIApiKey();
+    if (!currentKey || !currentKey.trim().startsWith("sk-")) {
+      toast.error("Por favor, insira e salve sua chave da OpenAI no campo acima para usar o assistente.");
+      setShowKeyCard(true);
+      return;
+    }
+
     const question = q;
     const history = msgs;
     setQ("");
@@ -140,26 +172,68 @@ Escreva em português do Brasil, tom humano, consultivo e persuasivo, pronto par
     }
   }
 
-  const handleChangeKey = () => {
-    const current = getOpenAIApiKey();
-    const nova = prompt("Insira ou altere sua chave OpenAI (sk-...):", current.startsWith("sk-") ? current : "");
-    if (nova !== null && nova.trim().startsWith("sk-")) {
-      setOpenAIApiKey(nova.trim());
-      toast.success("Chave OpenAI atualizada com sucesso!");
-    }
-  };
-
   return (
     <div>
       <PageHeader
         title="Assistente IA por nicho"
         subtitle="Tire dúvidas, quebre objeções e gere sondagens prontas para enviar ao cliente consumindo seus créditos OpenAI."
         action={
-          <Button variant="outline" size="sm" onClick={handleChangeKey} className="gap-1.5 text-xs">
-            <Key className="h-3.5 w-3.5 text-primary" /> Configurar Chave OpenAI
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowKeyCard(!showKeyCard)}
+            className="gap-1.5 text-xs"
+          >
+            <Key className="h-3.5 w-3.5 text-primary" />
+            {showKeyCard ? "Ocultar Chave API" : "Configurar Chave API"}
           </Button>
         }
       />
+
+      {/* Caixa de Entrada da Chave OpenAI Fixa no Topo */}
+      {showKeyCard && (
+        <div className="mb-5 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:p-5 transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                <Key className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                  Chave API da OpenAI
+                  {hasSavedKey && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-normal text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      <Check className="h-3 w-3" /> Conectada
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Insira sua chave (começa com <strong className="text-foreground font-mono">sk-proj-...</strong>) para usar seus créditos diretamente.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-col sm:flex-row gap-2 max-w-2xl">
+            <div className="relative flex-1">
+              <Input
+                type="password"
+                placeholder="Cole sua chave sk-proj-... aqui"
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                className="font-mono text-xs pr-9 bg-background"
+              />
+            </div>
+            <Button
+              onClick={handleSaveKey}
+              className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 text-xs shrink-0 font-medium h-9"
+            >
+              <Check className="h-4 w-4" /> Salvar Chave
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap gap-2">
         <select className={sel} value={niche} onChange={(e) => setNiche(e.target.value)}>
           <option value="">Escolha o nicho...</option>
@@ -170,6 +244,7 @@ Escreva em português do Brasil, tom humano, consultivo e persuasivo, pronto par
         </select>
         {msgs.length > 0 && <Button variant="ghost" onClick={() => setMsgs([])}>Nova conversa</Button>}
       </div>
+
       <div className="panel mb-4 min-h-[320px] space-y-4 p-5">
         {msgs.length === 0 && (
           <div className="flex flex-col items-center py-16 text-center text-muted-foreground">
@@ -194,6 +269,7 @@ Escreva em português do Brasil, tom humano, consultivo e persuasivo, pronto par
           ),
         )}
       </div>
+
       <div className="flex gap-2">
         <Textarea rows={2} placeholder="Digite a dúvida, objeção ou situação do cliente..." value={q}
           onChange={(e) => setQ(e.target.value)}

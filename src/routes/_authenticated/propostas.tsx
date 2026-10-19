@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { FileDown, Mail, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { FileDown, Mail, MessageCircle, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { toast } from "sonner";
 import { db, brl, fmtDate } from "@/lib/db";
@@ -18,6 +18,14 @@ export const Route = createFileRoute("/_authenticated/propostas")({
   component: Propostas,
 });
 
+export const DEFAULT_PROPOSAL_CONDITIONS = `Condições de Pagamento e Contratação:
+
+• Formas de pagamento: Pix ou cartão de crédito.
+• Pagamento: 50% na contratação e 50% na entrega do serviço.
+• Início do projeto: em até 7 dias após a aprovação da proposta.
+• Nota fiscal: emissão de nota fiscal referente aos serviços contratados.
+• Contrato: contrato de prestação de serviços para formalizar o acordo, garantindo mais segurança e transparência para ambas as partes.`;
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type P = {
   id?: string; number?: number; client_name: string; company: string; niche_id: string;
@@ -25,13 +33,16 @@ type P = {
   valid_until: string; notes: string; total?: number;
   sub_niche: string; city: string; district: string; audience: string; goal: string;
   diagnosis_notes: string; consultant: string; content: any;
+  client_phone?: string;
 };
 
 const empty = (): P => ({
   client_name: "", company: "", niche_id: "", items: [], bottlenecks: "", solution: "",
   sub_niche: "", city: "", district: "", audience: "", goal: "", diagnosis_notes: "",
   consultant: "Lucas Santos", content: null,
-  discount_percent: 0, notes: "Pagamento mensal via PIX. Início em até 7 dias após aprovação.",
+  client_phone: "",
+  discount_percent: 0,
+  notes: DEFAULT_PROPOSAL_CONDITIONS,
   valid_until: new Date(Date.now() + 15 * 864e5).toISOString().slice(0, 10),
 });
 
@@ -57,12 +68,12 @@ function Propostas() {
     queryKey: ["proposal-people"],
     queryFn: async () => {
       const [l, c] = await Promise.all([
-        db.from("leads").select("name, company_name, niche"),
-        db.from("clients").select("name, owner_name"),
+        db.from("leads").select("name, company_name, niche, whatsapp, phone"),
+        db.from("clients").select("name, owner_name, whatsapp, phone"),
       ]);
       return [
-        ...(l.data ?? []).map((x: any) => ({ label: `Lead: ${x.name}`, name: x.name, company: x.company_name ?? "", niche: x.niche })),
-        ...(c.data ?? []).map((x: any) => ({ label: `Cliente: ${x.name}`, name: x.owner_name || x.name, company: x.name, niche: null })),
+        ...(l.data ?? []).map((x: any) => ({ label: `Lead: ${x.name}`, name: x.name, company: x.company_name ?? "", niche: x.niche, phone: x.whatsapp || x.phone || "" })),
+        ...(c.data ?? []).map((x: any) => ({ label: `Cliente: ${x.name}`, name: x.owner_name || x.name, company: x.name, niche: null, phone: x.whatsapp || x.phone || "" })),
       ];
     },
   });
@@ -154,6 +165,29 @@ function Propostas() {
     } catch (e: any) { toast.error(e.message, { id }); }
   }
 
+  function sendWhatsApp(p: any) {
+    const rawPhone = p.client_phone || prompt(`WhatsApp de ${p.client_name} (com DDD, somente números):`);
+    if (!rawPhone) return;
+    const clean = String(rawPhone).replace(/\D/g, "");
+    if (!clean) return void toast.error("Número de telefone inválido");
+    const formatted = clean.startsWith("55") ? clean : `55${clean}`;
+    const valor = brl(p.total || 0);
+    const msg = encodeURIComponent(
+      `Olá, ${p.client_name}! Tudo bem?\n\n` +
+      `Aqui é da Santos MktPro. Conforme conversamos, segue a proposta comercial para ${p.company || "sua empresa"}.\n\n` +
+      `💰 *Investimento total:* ${valor}\n\n` +
+      `📋 *Condições de Pagamento e Contratação:*\n` +
+      `• Formas de pagamento: Pix ou cartão de crédito.\n` +
+      `• Pagamento: 50% na contratação e 50% na entrega do serviço.\n` +
+      `• Início do projeto: em até 7 dias após a aprovação da proposta.\n` +
+      `• Nota fiscal: emissão de nota fiscal referente aos serviços contratados.\n` +
+      `• Contrato: contrato de prestação de serviços para formalizar o acordo, garantindo mais segurança e transparência para ambas as partes.\n\n` +
+      `Fico à disposição para tirarmos qualquer dúvida e iniciarmos o projeto!\n\n` +
+      `Abraço,\n${p.consultant || "Lucas Santos"} — Santos MktPro`
+    );
+    window.open(`https://api.whatsapp.com/send?phone=${formatted}&text=${msg}`, "_blank");
+  }
+
   async function remove(id: string) {
     if (!confirm("Excluir proposta?")) return;
     await db.from("proposals").delete().eq("id", id);
@@ -177,7 +211,7 @@ function Propostas() {
                 <Label className="mb-1.5 block text-xs text-muted-foreground">Puxar de lead / cliente</Label>
                 <select className={sel} value="" onChange={(e) => {
                   const x = people[Number(e.target.value)]; if (!x) return;
-                  let p = { ...edit, client_name: x.name, company: x.company };
+                  let p = { ...edit, client_name: x.name, company: x.company, client_phone: x.phone || "" };
                   const n = niches.find((n: any) => n.name?.toLowerCase() === x.niche?.toLowerCase());
                   if (n) p = applyNiche(n.id, p);
                   setEdit(p);
@@ -188,6 +222,7 @@ function Propostas() {
               </div>
               <div><Label className="mb-1.5 block text-xs text-muted-foreground">Cliente *</Label><Input value={edit.client_name} onChange={(e) => setE({ client_name: e.target.value })} /></div>
               <div><Label className="mb-1.5 block text-xs text-muted-foreground">Empresa</Label><Input value={edit.company} onChange={(e) => setE({ company: e.target.value })} /></div>
+              <div className="sm:col-span-2"><Label className="mb-1.5 block text-xs text-muted-foreground">WhatsApp / Telefone</Label><Input placeholder="Ex: (11) 99999-9999" value={edit.client_phone ?? ""} onChange={(e) => setE({ client_phone: e.target.value })} /></div>
               <div className="sm:col-span-2">
                 <Label className="mb-1.5 block text-xs text-muted-foreground">Nicho (preenche gargalos e solução)</Label>
                 <select className={sel} value={edit.niche_id} onChange={(e) => setEdit(applyNiche(e.target.value, edit))}>
@@ -293,10 +328,11 @@ function Propostas() {
                   {p.followup_done && <div className="text-xs text-success">✓ feito</div>}
                 </td>
                 <td className="whitespace-nowrap px-2 text-right">
-                  <Button size="icon" variant="ghost" aria-label="PDF" onClick={() => makePdf(p)}><FileDown className="h-4 w-4 text-primary" /></Button>
-                  <Button size="icon" variant="ghost" aria-label="Enviar por e-mail" onClick={() => sendEmail(p)}><Mail className="h-4 w-4 text-primary" /></Button>
-                  <Button size="icon" variant="ghost" aria-label="Editar" onClick={() => setEdit({ ...p, company: p.company ?? "", niche_id: p.niche_id ?? "", bottlenecks: p.bottlenecks ?? "", solution: p.solution ?? "", sub_niche: p.sub_niche ?? "", city: p.city ?? "", district: p.district ?? "", audience: p.audience ?? "", goal: p.goal ?? "", diagnosis_notes: p.diagnosis_notes ?? "", consultant: p.consultant ?? "Lucas Santos" })}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <Button size="icon" variant="ghost" aria-label="PDF" title="Baixar PDF" onClick={() => makePdf(p)}><FileDown className="h-4 w-4 text-primary" /></Button>
+                  <Button size="icon" variant="ghost" aria-label="Enviar por WhatsApp" title="Enviar por WhatsApp" onClick={() => sendWhatsApp(p)}><MessageCircle className="h-4 w-4 text-emerald-500" /></Button>
+                  <Button size="icon" variant="ghost" aria-label="Enviar por e-mail" title="Enviar por e-mail" onClick={() => sendEmail(p)}><Mail className="h-4 w-4 text-primary" /></Button>
+                  <Button size="icon" variant="ghost" aria-label="Editar" title="Editar proposta" onClick={() => setEdit({ ...p, company: p.company ?? "", niche_id: p.niche_id ?? "", bottlenecks: p.bottlenecks ?? "", solution: p.solution ?? "", sub_niche: p.sub_niche ?? "", city: p.city ?? "", district: p.district ?? "", audience: p.audience ?? "", goal: p.goal ?? "", diagnosis_notes: p.diagnosis_notes ?? "", consultant: p.consultant ?? "Lucas Santos", client_phone: p.client_phone ?? "" })}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" aria-label="Excluir" title="Excluir proposta" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </td>
               </tr>
             ))}

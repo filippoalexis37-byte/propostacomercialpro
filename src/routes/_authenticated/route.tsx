@@ -4,16 +4,23 @@ import { useState } from "react";
 import {
   LayoutDashboard, Users, Building2, BadgeCheck, CalendarClock, Briefcase, Calculator,
   Package, Target, MessageSquareWarning, Sparkles, BellRing, Settings, LogOut, Menu, X,
-  FileText, Receipt, Bot, Search, Handshake, Crosshair, Video,
+  FileText, Receipt, Bot, Search, Handshake, Crosshair, Video, Lock, ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db";
+
+const MASTER_ADMIN_EMAIL = "lucasmktpro158@gmail.com";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+    const email = data.user.email?.toLowerCase().trim();
+    if (email && email !== MASTER_ADMIN_EMAIL) {
+      await supabase.auth.signOut();
+      throw redirect({ to: "/auth" });
+    }
     return { user: data.user };
   },
   component: Layout,
@@ -100,8 +107,14 @@ function Layout() {
         ))}
       </nav>
       <div className="border-t border-sidebar-border p-4">
-        <div className="truncate text-sm font-medium text-foreground">{profile?.name}</div>
-        <div className="mb-3 text-xs capitalize text-muted-foreground">{profile?.roles.join(", ") || "usuário"}</div>
+        <div className="flex items-center gap-1.5 font-medium text-foreground text-sm">
+          <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+          <span className="truncate">{profile?.name || "Lucas Santos"}</span>
+        </div>
+        <div className="text-[11px] text-muted-foreground truncate">{user.email}</div>
+        <div className="mb-3 mt-1.5 inline-flex items-center gap-1 rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400 border border-amber-500/20">
+          <ShieldCheck className="h-3 w-3" /> Admin Master (Protegido)
+        </div>
         <button onClick={signOut} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <LogOut className="h-4 w-4" /> Sair
         </button>
