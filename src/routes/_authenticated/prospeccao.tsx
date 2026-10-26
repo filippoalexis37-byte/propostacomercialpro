@@ -17,21 +17,21 @@ import {
   AlertCircle, Clock, XCircle, FileText, Search,
 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/prospeccao")(({
+export const Route = createFileRoute("/_authenticated/prospeccao")({
   head: pageHead("Prospecção B2B", "Central de prospecção comercial."),
   component: ProspeccaoDashboard,
-}));
+});
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function StatCard({
-  label, value, icon: Icon, color = "text-foreground", sub,
+  label, value, icon: Icon, color = "text-foreground", sub, href,
 }: {
   label: string; value: string | number | undefined; icon: any;
-  color?: string; sub?: string;
+  color?: string; sub?: string; href?: string;
 }) {
-  return (
-    <div className="panel p-5 flex items-start gap-4">
-      <div className={`rounded-lg p-2 bg-muted ${color}`}>
+  const content = (
+    <div className={`panel p-5 flex items-start gap-4 transition-all ${href ? "hover:border-primary/60 hover:shadow-xs cursor-pointer group" : ""}`}>
+      <div className={`rounded-lg p-2 bg-muted ${color} group-hover:scale-105 transition-transform`}>
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
@@ -43,6 +43,15 @@ function StatCard({
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link to={href} className="block">
+        {content}
+      </Link>
+    );
+  }
+  return content;
 }
 
 function FunnelBar({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
@@ -82,7 +91,7 @@ function ProspeccaoDashboard() {
     const notProspected = companies.filter((c) => c.prospecting_status === "Não prospectado").length;
     const prospected = total - notProspected;
     const inContact = companies.filter((c) =>
-      ["Respondeu", "Qualificado", "Reunião/Diagnóstico"].includes(c.prospecting_status)
+      ["Respondeu", "Qualificado", "Reunião/Diagnóstico", "Tentativa realizada"].includes(c.prospecting_status)
     ).length;
     const qualified = companies.filter((c) =>
       ["Qualificado", "Reunião/Diagnóstico"].includes(c.prospecting_status)
@@ -90,14 +99,14 @@ function ProspeccaoDashboard() {
     const proposal = companies.filter((c) =>
       ["Proposta enviada", "Negociação"].includes(c.prospecting_status)
     ).length;
-    const clients = companies.filter((c) => c.prospecting_status === "Cliente").length;
+    const clients = companies.filter((c) => c.prospecting_status === "Cliente" || c.prospecting_status === "Fechado").length;
     const noInterest = companies.filter((c) => c.prospecting_status === "Sem interesse").length;
     const noAnswer = companies.filter((c) => c.prospecting_status === "Não respondeu").length;
 
     const followupToday = companies.filter((c) => {
       if (!c.next_contact_at) return false;
       const d = new Date(c.next_contact_at + "T12:00:00");
-      return d <= today;
+      return d.toDateString() === today.toDateString();
     }).length;
 
     const followupLate = companies.filter((c) => {
@@ -126,7 +135,7 @@ function ProspeccaoDashboard() {
       if (!map[n]) map[n] = { total: 0, prospected: 0, clients: 0, potential: 0 };
       map[n].total++;
       if (c.prospecting_status !== "Não prospectado") map[n].prospected++;
-      if (c.prospecting_status === "Cliente") map[n].clients++;
+      if (c.prospecting_status === "Cliente" || c.prospecting_status === "Fechado") map[n].clients++;
       map[n].potential += Number(c.estimated_contract_value) || 0;
     }
     return Object.entries(map)
@@ -142,7 +151,7 @@ function ProspeccaoDashboard() {
       if (!map[city]) map[city] = { total: 0, prospected: 0, clients: 0 };
       map[city].total++;
       if (c.prospecting_status !== "Não prospectado") map[city].prospected++;
-      if (c.prospecting_status === "Cliente") map[city].clients++;
+      if (c.prospecting_status === "Cliente" || c.prospecting_status === "Fechado") map[city].clients++;
     }
     return Object.entries(map)
       .sort((a, b) => b[1].total - a[1].total)
@@ -179,15 +188,16 @@ function ProspeccaoDashboard() {
         }
       />
 
-      {/* Cards de status */}
+      {/* Cards de status clicáveis */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total de empresas" value={stats.total} icon={Building2} />
+        <StatCard label="Total de empresas" value={stats.total} icon={Building2} href="/prospeccao/empresas-prospectadas" />
         <StatCard
           label="Não prospectadas"
           value={stats.notProspected}
           icon={AlertCircle}
           color="text-gray-500"
           sub={`${100 - stats.pctProspected}% restante`}
+          href="/prospeccao/empresas-nao-prospectadas"
         />
         <StatCard
           label="Prospectadas"
@@ -195,26 +205,29 @@ function ProspeccaoDashboard() {
           icon={CheckCircle2}
           color="text-green-600"
           sub={`${stats.pctProspected}% do total`}
+          href="/prospeccao/empresas-prospectadas"
         />
-        <StatCard label="Em contato" value={stats.inContact} icon={Users} color="text-blue-600" />
-        <StatCard label="Qualificadas" value={stats.qualified} icon={Target} color="text-purple-600" />
-        <StatCard label="Proposta enviada" value={stats.proposal} icon={FileText} color="text-orange-600" />
-        <StatCard label="Clientes" value={stats.clients} icon={CheckCircle2} color="text-green-700" />
-        <StatCard label="Sem interesse" value={stats.noInterest} icon={XCircle} color="text-red-500" />
-        <StatCard label="Sem resposta" value={stats.noAnswer} icon={AlertCircle} color="text-slate-500" />
+        <StatCard label="Em contato" value={stats.inContact} icon={Users} color="text-blue-600" href="/prospeccao/empresas-prospectadas" />
+        <StatCard label="Qualificadas" value={stats.qualified} icon={Target} color="text-purple-600" href="/prospeccao/empresas-prospectadas" />
+        <StatCard label="Proposta enviada" value={stats.proposal} icon={FileText} color="text-orange-600" href="/prospeccao/empresas-prospectadas" />
+        <StatCard label="Clientes" value={stats.clients} icon={CheckCircle2} color="text-green-700" href="/prospeccao/empresas-prospectadas" />
+        <StatCard label="Sem interesse" value={stats.noInterest} icon={XCircle} color="text-red-500" href="/prospeccao/empresas-prospectadas" />
+        <StatCard label="Sem resposta" value={stats.noAnswer} icon={AlertCircle} color="text-slate-500" href="/prospeccao/empresas-prospectadas" />
         <StatCard
           label="Follow-ups hoje"
           value={stats.followupToday}
           icon={Clock}
           color={stats.followupToday > 0 ? "text-amber-600" : "text-muted-foreground"}
+          href="/prospeccao/followup"
         />
         <StatCard
           label="Follow-ups atrasados"
           value={stats.followupLate}
           icon={Clock}
           color={stats.followupLate > 0 ? "text-red-600" : "text-muted-foreground"}
+          href="/prospeccao/followup"
         />
-        <StatCard label="Valor potencial" value={brl(stats.potentialValue)} icon={TrendingUp} color="text-emerald-600" />
+        <StatCard label="Valor potencial" value={brl(stats.potentialValue)} icon={TrendingUp} color="text-emerald-600" href="/prospeccao/empresas-prospectadas" />
       </div>
 
       {/* Funil visual */}

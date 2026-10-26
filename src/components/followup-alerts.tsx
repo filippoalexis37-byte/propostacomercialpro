@@ -1,8 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BellRing, Check } from "lucide-react";
+import { BellRing, Check, MessageSquare } from "lucide-react";
 import { db, brl, fmtDate } from "@/lib/db";
 import { Button } from "@/components/ui/button";
+
+// WhatsApp message templates per lead status
+const WHATSAPP_TEMPLATES: Record<string, string> = {
+  "Novo": "Olá, gostaria de conversar sobre sua proposta.",
+  "Em negociação": "Olá, lembrando da nossa negociação. Por favor, responda quando puder.",
+  "Fechado": "Obrigado pela parceria! Estamos à disposição para novos projetos."
+};
+
+// Select appropriate template based on lead status
+function getWhatsAppMessage(lead: any): string {
+  return WHATSAPP_TEMPLATES[lead.status] || "Olá, como posso ajudar?";
+}
+
+// Open WhatsApp chat with pre‑filled message
+function openWhatsApp(phone: string, text: string) {
+  if (!phone) return;
+  const cleanPhone = phone.replace(/\D/g, "");
+  const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+  window.open(url, "_blank");
+}
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -57,6 +77,11 @@ export function FollowupAlerts() {
               <div className="text-xs text-muted-foreground">{l.status} • contato marcado para {fmtDate(l.next_contact_at)}{l.whatsapp ? ` • ${l.whatsapp}` : ""}</div>
             </div>
             <Button size="sm" variant="outline" onClick={() => snoozeLead(l.id)}><Check className="mr-1 h-4 w-4" />Já falei (+3 dias)</Button>
+            {l.whatsapp && (
+              <Button size="sm" variant="ghost" onClick={() => openWhatsApp(l.whatsapp, getWhatsAppMessage(l))} className="ml-2">
+                <MessageSquare className="mr-1 h-4 w-4" />WhatsApp
+              </Button>
+            )}
           </div>
         ))}
       </div>
