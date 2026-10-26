@@ -5,7 +5,7 @@
  */
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { pageHead } from "@/lib/meta";
 import {
   db, brl, fmtDate,
@@ -22,14 +22,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, Plus, Clock, History } from "lucide-react";
+import { Search, Plus, Clock, History, MessageSquare, Copy, Globe } from "lucide-react";
+import { normalizePhone, formatPhoneDisplay } from "@/lib/phone";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/empresas-prospectadas")({
   head: pageHead("Empresas Prospectadas", "Empresas que já receberam tentativa de prospecção."),
   component: EmpresasProspectadas,
 });
-
-const NEGATIVES = ["Sem interesse", "Número inválido", "Empresa fechada", "Fora do perfil", "Duplicado"];
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -119,6 +118,7 @@ function RegisterAttemptDialog({
       toast.success("Tentativa registrada com sucesso!");
       qc.invalidateQueries({ queryKey: ["companies-prospecting"] });
       qc.invalidateQueries({ queryKey: ["companies-prospected"] });
+      qc.invalidateQueries({ queryKey: ["companies-followup"] });
       qc.invalidateQueries({ queryKey: ["prospecting-attempts", company.id] });
       onClose();
     } catch (e: any) {
@@ -212,7 +212,7 @@ function HistoryDialog({ company, open, onClose }: { company: any; open: boolean
           <p className="text-sm text-muted-foreground">Nenhuma tentativa registrada ainda.</p>
         )}
         <div className="space-y-4">
-          {attempts.map((a: any, i: number) => (
+          {attempts.map((a: any) => (
             <div key={a.id} className="relative pl-6 pb-4 border-l-2 border-border last:border-transparent">
               <div className="absolute left-[-5px] top-1 h-2.5 w-2.5 rounded-full bg-primary" />
               <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -250,7 +250,6 @@ function EmpresasProspectadas() {
   const [cityFilter, setCityFilter] = useState("");
   const [registerCompany, setRegisterCompany] = useState<any>(null);
   const [historyCompany, setHistoryCompany] = useState<any>(null);
-  const qc = useQueryClient();
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ["companies-prospected"],
@@ -264,54 +263,77 @@ function EmpresasProspectadas() {
     },
   });
 
-  const niches = useMemo(() => [...new Set(companies.map((c: any) => c.niche).filter(Boolean))].sort(), [companies]);
-  const cities = useMemo(() => [...new Set(companies.map((c: any) => c.city).filter(Boolean))].sort(), [companies]);
+  const statuses = useMemo(() =>
+    [...new Set(companies.map((c: any) => c.prospecting_status).filter(Boolean))].sort(),
+    [companies]
+  );
+  const niches = useMemo(() =>
+    [...new Set(companies.map((c: any) => c.niche).filter(Boolean))].sort(),
+    [companies]
+  );
+  const cities = useMemo(() =>
+    [...new Set(companies.map((c: any) => c.city).filter(Boolean))].sort(),
+    [companies]
+  );
 
-  const filtered = useMemo(() =>
-    companies.filter((c: any) => {
+  const filtered = useMemo(() => {
+    return companies.filter((c: any) => {
       const qs = q.toLowerCase();
       const matchQ = !q ||
         c.name?.toLowerCase().includes(qs) ||
         c.trade_name?.toLowerCase().includes(qs) ||
-        c.contact_name?.toLowerCase().includes(qs);
+        c.contact_name?.toLowerCase().includes(qs) ||
+        c.phone?.includes(qs) ||
+        c.whatsapp?.includes(qs);
       const matchStatus = !statusFilter || c.prospecting_status === statusFilter;
       const matchNiche = !nicheFilter || c.niche === nicheFilter;
       const matchCity = !cityFilter || c.city === cityFilter;
       return matchQ && matchStatus && matchNiche && matchCity;
-    }),
-    [companies, q, statusFilter, nicheFilter, cityFilter]
-  );
+    });
+  }, [companies, q, statusFilter, nicheFilter, cityFilter]);
 
-  async function changeStatus(company: any, status: string) {
-    await db.from("companies").update({ prospecting_status: status }).eq("id", company.id);
-    qc.invalidateQueries({ queryKey: ["companies-prospected"] });
-    qc.invalidateQueries({ queryKey: ["companies-prospecting"] });
-    toast.success(`Status alterado para "${status}"`);
-  }
+  const handleOpenWhatsApp = (c: any) => {
+    const raw = c.whatsapp || c.phone;
+    const phone = normalizePhone(raw);
+    if (!phone) {
+      toast.error("Telefone/WhatsApp não disponível ou inválido.");
+      return;
+    }
+    window.open(`https://wa.me/${phone}`, "_blank");
+  };
+
+  const handleCopyPhone = async (c: any) => {
+    const p = c.whatsapp || c.phone;
+    if (!p) {
+      toast.error("Nenhum telefone cadastrado.");
+      return;
+    }
+    await navigator.clipboard.writeText(p);
+    toast.success(`Telefone ${p} copiado!`);
+  };
+
+  const handleOpenSite = (url: string) => {
+    if (!url) return;
+    const target = url.startsWith("http") ? url : `https://${url}`;
+    window.open(target, "_blank");
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Empresas Prospectadas"
-        subtitle="Empresas que já receberam pelo menos uma tentativa de contato."
-        action={
-          <div className="text-sm text-muted-foreground">
-            {filtered.length} empresa(s)
-          </div>
-        }
+        subtitle="Empresas que já tiveram pelo menos uma tentativa de contato. Acompanhe a cadência."
       />
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Buscar..." value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input className="pl-9" placeholder="Buscar por nome, contato, telefone..." value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <select className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">Todos os status</option>
-          {PROSPECTING_STATUSES.filter((s) => s !== "Não prospectado").map((s) => (
-            <option key={s}>{s}</option>
-          ))}
+          {statuses.map((s: string) => <option key={s}>{s}</option>)}
         </select>
         <select className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground" value={nicheFilter} onChange={(e) => setNicheFilter(e.target.value)}>
           <option value="">Todos os nichos</option>
@@ -338,11 +360,11 @@ function EmpresasProspectadas() {
               <th className="px-4 py-3">Cidade</th>
               <th className="px-4 py-3">Contato</th>
               <th className="px-4 py-3">Última tentativa</th>
-              <th className="px-4 py-3">Tentativas</th>
+              <th className="px-4 py-3 text-center">Tentativas</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Próx. follow-up</th>
               <th className="px-4 py-3">Prioridade</th>
-              <th className="px-3 py-3" />
+              <th className="px-4 py-3 text-center">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -353,7 +375,7 @@ function EmpresasProspectadas() {
               <tr><td className="px-4 py-10 text-center text-muted-foreground" colSpan={99}>Nenhuma empresa encontrada.</td></tr>
             )}
             {filtered.map((c: any) => (
-              <tr key={c.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30">
+              <tr key={c.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="px-4 py-3 font-medium text-foreground">
                   {c.name}
                   {c.trade_name && <div className="text-xs text-muted-foreground">{c.trade_name}</div>}
@@ -362,20 +384,78 @@ function EmpresasProspectadas() {
                 <td className="px-4 py-3 text-muted-foreground">{c.city || "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {c.contact_name && <div className="text-xs font-medium text-foreground">{c.contact_name}</div>}
-                  {c.whatsapp || c.phone || "—"}
+                  <div className="text-xs">{formatPhoneDisplay(c.whatsapp || c.phone)}</div>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{fmtDate(c.last_attempted_at)}</td>
-                <td className="px-4 py-3 text-center text-muted-foreground">{c.attempt_count || 0}</td>
+                <td className="px-4 py-3 text-center text-muted-foreground">
+                  <Badge variant="secondary">{c.attempt_count || 0}</Badge>
+                </td>
                 <td className="px-4 py-3"><StatusBadge status={c.prospecting_status} /></td>
                 <td className="px-4 py-3 text-muted-foreground">{fmtDate(c.next_contact_at)}</td>
                 <td className="px-4 py-3"><PriorityBadge priority={c.prospecting_priority} /></td>
-                <td className="px-2 py-2 text-right whitespace-nowrap flex gap-1">
-                  <Button size="sm" variant="outline" onClick={() => setRegisterCompany(c)}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Registrar
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => setHistoryCompany(c)} title="Histórico">
-                    <History className="h-4 w-4" />
-                  </Button>
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <div className="flex items-center justify-end gap-1">
+                    {/* Botão WhatsApp */}
+                    {(c.whatsapp || c.phone) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                        title="Abrir WhatsApp"
+                        onClick={() => handleOpenWhatsApp(c)}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                        WhatsApp
+                      </Button>
+                    )}
+
+                    {/* Copiar Telefone */}
+                    {(c.whatsapp || c.phone) && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        title="Copiar telefone"
+                        onClick={() => handleCopyPhone(c)}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+
+                    {/* Site */}
+                    {c.website && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        title="Abrir Website"
+                        onClick={() => handleOpenSite(c.website)}
+                      >
+                        <Globe className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+
+                    {/* Registrar */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                      onClick={() => setRegisterCompany(c)}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Registrar
+                    </Button>
+
+                    {/* Histórico */}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-slate-500 hover:text-slate-800"
+                      onClick={() => setHistoryCompany(c)}
+                      title="Ver Histórico"
+                    >
+                      <History className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}

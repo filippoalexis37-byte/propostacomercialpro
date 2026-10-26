@@ -1,156 +1,55 @@
 // @ts-nocheck
 /**
- * FOLLOW-UP DE PROSPECÇÃO
- * Empresas com próximo contato vencido ou para hoje.
+ * FOLLOW-UP DE PROSPECÇÃO B2B
+ * Central de Follow-up com ações rápidas, scripts personalizados e histórico completo.
  */
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { pageHead } from "@/lib/meta";
 import {
   db, fmtDate,
   PROSPECTING_STATUS_COLORS, PROSPECTING_STATUS_ICONS,
-  ATTEMPT_CHANNELS, ATTEMPT_RESULTS, ATTEMPT_TYPES, PROSPECTING_STATUSES,
 } from "@/lib/db";
 import { PageHeader } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { Clock, AlertTriangle, Plus, Search } from "lucide-react";
+import { FollowupActions } from "@/components/FollowupActions";
+import { FollowupScriptModal } from "@/components/FollowupScriptModal";
+import { ContactRegisterModal } from "@/components/ContactRegisterModal";
+import { ScheduleModal } from "@/components/ScheduleModal";
+import { HistoryModal } from "@/components/HistoryModal";
+import { normalizePhone, formatPhoneDisplay } from "@/lib/phone";
+import { AlertTriangle, Search, Filter } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/followup")({
-  head: pageHead("Follow-up B2B", "Empresas que precisam de novo contato."),
+  head: pageHead("Follow-up B2B", "Gestão de contatos pendentes, agendados e histórico."),
   component: FollowupProspeccao,
 });
 
-function RegisterAttemptDialog({ company, open, onClose }: { company: any; open: boolean; onClose: () => void }) {
-  const qc = useQueryClient();
-  const [form, setForm] = useState({
-    attempt_date: new Date().toISOString().slice(0, 10),
-    channel: "WhatsApp",
-    attempt_type: "Follow-up",
-    message_used: "",
-    result: "Não respondeu",
-    notes: "",
-    next_contact_at: "",
-    new_status: "",
-  });
-  const [saving, setSaving] = useState(false);
-
-  function set(k: string, v: string) { setForm((f) => ({ ...f, [k]: v })); }
-
-  async function save() {
-    setSaving(true);
-    try {
-      await db.from("prospecting_attempts").insert({
-        company_id: company.id,
-        attempt_date: form.attempt_date,
-        channel: form.channel,
-        attempt_type: form.attempt_type,
-        message_used: form.message_used || null,
-        result: form.result,
-        notes: form.notes || null,
-        next_contact_at: form.next_contact_at || null,
-      });
-      const update: any = {
-        last_attempted_at: form.attempt_date,
-        attempt_count: (company.attempt_count || 0) + 1,
-        last_attempt_result: form.result,
-      };
-      if (form.next_contact_at) update.next_contact_at = form.next_contact_at;
-      else update.next_contact_at = null;
-      if (form.new_status) update.prospecting_status = form.new_status;
-      await db.from("companies").update(update).eq("id", company.id);
-      toast.success("Follow-up registrado!");
-      qc.invalidateQueries({ queryKey: ["companies-followup"] });
-      qc.invalidateQueries({ queryKey: ["companies-prospecting"] });
-      onClose();
-    } catch (e: any) {
-      toast.error(e.message ?? "Erro ao registrar.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Registrar Follow-up — {company?.name}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Data *</Label>
-            <Input type="date" value={form.attempt_date} onChange={(e) => set("attempt_date", e.target.value)} />
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Canal *</Label>
-            <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.channel} onChange={(e) => set("channel", e.target.value)}>
-              {ATTEMPT_CHANNELS.map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Tipo</Label>
-            <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.attempt_type} onChange={(e) => set("attempt_type", e.target.value)}>
-              {ATTEMPT_TYPES.map((t) => <option key={t}>{t}</option>)}
-            </select>
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Resultado *</Label>
-            <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.result} onChange={(e) => set("result", e.target.value)}>
-              {ATTEMPT_RESULTS.map((r) => <option key={r}>{r}</option>)}
-            </select>
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Próximo contato</Label>
-            <Input type="date" value={form.next_contact_at} onChange={(e) => set("next_contact_at", e.target.value)} />
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Alterar status</Label>
-            <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.new_status} onChange={(e) => set("new_status", e.target.value)}>
-              <option value="">Manter atual</option>
-              {PROSPECTING_STATUSES.map((s) => <option key={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="sm:col-span-2">
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Mensagem utilizada</Label>
-            <Textarea rows={2} value={form.message_used} onChange={(e) => set("message_used", e.target.value)} />
-          </div>
-          <div className="sm:col-span-2">
-            <Label className="mb-1.5 block text-xs text-muted-foreground">Observações</Label>
-            <Textarea rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Registrar"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
+type TabKey = "late" | "today" | "upcoming" | "no_date" | "completed";
 
 function FollowupProspeccao() {
   const [q, setQ] = useState("");
   const [nicheFilter, setNicheFilter] = useState("");
-  const [tab, setTab] = useState<"late" | "today" | "upcoming">("late");
+  const [tab, setTab] = useState<TabKey>("late");
+
+  // Estados dos modais
+  const [scriptCompany, setScriptCompany] = useState<any>(null);
   const [registerCompany, setRegisterCompany] = useState<any>(null);
+  const [registerInitialMessage, setRegisterInitialMessage] = useState<string>("");
+  const [scheduleCompany, setScheduleCompany] = useState<any>(null);
+  const [historyCompany, setHistoryCompany] = useState<any>(null);
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ["companies-followup"],
     queryFn: async () => {
-      const { data } = await db
+      const { data, error } = await db
         .from("companies")
         .select("*")
-        .not("next_contact_at", "is", null)
-        .not("prospecting_status", "in", '("Cliente","Sem interesse","Número inválido","Empresa fechada","Fora do perfil","Duplicado")')
-        .order("next_contact_at", { ascending: true });
+        .order("next_contact_at", { ascending: true, nullsFirst: false });
+      if (error) throw error;
       return data ?? [];
     },
   });
@@ -163,19 +62,42 @@ function FollowupProspeccao() {
   nextWeek.setDate(nextWeek.getDate() + 7);
 
   const categorized = useMemo(() => {
+    const late: any[] = [];
+    const todayList: any[] = [];
+    const upcoming: any[] = [];
+    const noDate: any[] = [];
+    const completed: any[] = [];
+
+    companies.forEach((c: any) => {
+      const status = c.prospecting_status || "";
+      if (status === "Cliente" || status === "Fechado") {
+        completed.push(c);
+        return;
+      }
+
+      if (!c.next_contact_at) {
+        noDate.push(c);
+        return;
+      }
+
+      const d = new Date(c.next_contact_at + "T12:00:00");
+      if (d < today) {
+        late.push(c);
+      } else if (d >= today && d < tomorrow) {
+        todayList.push(c);
+      } else if (d >= tomorrow && d <= nextWeek) {
+        upcoming.push(c);
+      } else {
+        upcoming.push(c);
+      }
+    });
+
     return {
-      late: companies.filter((c: any) => {
-        const d = new Date(c.next_contact_at + "T12:00:00");
-        return d < today;
-      }),
-      today: companies.filter((c: any) => {
-        const d = new Date(c.next_contact_at + "T12:00:00");
-        return d >= today && d < tomorrow;
-      }),
-      upcoming: companies.filter((c: any) => {
-        const d = new Date(c.next_contact_at + "T12:00:00");
-        return d >= tomorrow && d <= nextWeek;
-      }),
+      late,
+      today: todayList,
+      upcoming,
+      no_date: noDate,
+      completed,
     };
   }, [companies]);
 
@@ -184,45 +106,57 @@ function FollowupProspeccao() {
     [companies]
   );
 
-  const current = categorized[tab];
+  const currentList = categorized[tab] || [];
   const filtered = useMemo(() =>
-    current.filter((c: any) => {
+    currentList.filter((c: any) => {
       const qs = q.toLowerCase();
-      const matchQ = !q || c.name?.toLowerCase().includes(qs) || c.niche?.toLowerCase().includes(qs);
+      const matchQ =
+        !q ||
+        c.name?.toLowerCase().includes(qs) ||
+        c.niche?.toLowerCase().includes(qs) ||
+        c.whatsapp?.toLowerCase().includes(qs) ||
+        c.phone?.toLowerCase().includes(qs);
       const matchNiche = !nicheFilter || c.niche === nicheFilter;
       return matchQ && matchNiche;
     }),
-    [current, q, nicheFilter]
+    [currentList, q, nicheFilter]
   );
 
   const daysSince = (dateStr: string) => {
+    if (!dateStr) return 0;
     const d = new Date(dateStr + "T12:00:00");
-    return Math.floor((today.getTime() - d.getTime()) / 86400000);
+    return Math.max(1, Math.floor((today.getTime() - d.getTime()) / 86400000));
   };
 
-  const tabs = [
+  const tabs: { key: TabKey; label: string; count: number; color: string }[] = [
     { key: "late", label: "Atrasados", count: categorized.late.length, color: "text-red-600" },
     { key: "today", label: "Hoje", count: categorized.today.length, color: "text-amber-600" },
-    { key: "upcoming", label: "Próximos 7 dias", count: categorized.upcoming.length, color: "text-blue-600" },
+    { key: "upcoming", label: "Próximos dias", count: categorized.upcoming.length, color: "text-blue-600" },
+    { key: "no_date", label: "Sem data definida", count: categorized.no_date.length, color: "text-slate-500" },
+    { key: "completed", label: "Fechados / Clientes", count: categorized.completed.length, color: "text-emerald-600" },
   ];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Follow-up de Prospecção"
-        subtitle="Empresas que precisam de novo contato. Nunca envie mensagem sem autorização."
+        subtitle="Gerencie seus follow-ups com scripts personalizados, histórico completo e ação direta via WhatsApp."
       />
 
-      {/* Resumo */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      {/* Resumo em Abas / Cards */}
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
         {tabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key as any)}
-            className={`panel p-4 text-left transition-all hover:ring-2 hover:ring-primary/30 ${tab === t.key ? "ring-2 ring-primary" : ""}`}
+            onClick={() => setTab(t.key)}
+            className={`panel p-3.5 text-left transition-all hover:ring-2 hover:ring-primary/30 ${
+              tab === t.key ? "ring-2 ring-primary border-primary bg-primary/5" : ""
+            }`}
           >
-            <div className={`text-xs font-medium ${t.color}`}>{t.label}</div>
-            <div className="font-display text-3xl font-semibold text-foreground mt-1">{t.count}</div>
+            <div className={`text-xs font-semibold ${t.color}`}>{t.label}</div>
+            <div className="font-display text-2xl font-bold text-foreground mt-1">
+              {t.count}
+            </div>
           </button>
         ))}
       </div>
@@ -230,76 +164,154 @@ function FollowupProspeccao() {
       {/* Aviso importante */}
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
         <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-        <p className="text-sm text-amber-800">
-          <strong>Atenção:</strong> O sistema nunca envia mensagens automaticamente. Você precisa registrar cada contato manualmente após realizá-lo.
+        <p className="text-xs text-amber-800 leading-relaxed">
+          <strong>Aviso de conformidade:</strong> O WhatsApp é aberto via link direto (wa.me) no seu navegador para que você autorize e revise o envio. Após o contato, use o botão <strong>Registrar</strong> para salvar o histórico e manter os indicadores atualizados.
         </p>
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap gap-2">
-        <div className="relative flex-1 min-w-48">
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="relative flex-1 min-w-56">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Buscar..." value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input
+            className="pl-9"
+            placeholder="Buscar por empresa, telefone, nicho..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
         </div>
-        <select className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={nicheFilter} onChange={(e) => setNicheFilter(e.target.value)}>
+        <select
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          value={nicheFilter}
+          onChange={(e) => setNicheFilter(e.target.value)}
+        >
           <option value="">Todos os nichos</option>
-          {niches.map((n: string) => <option key={n}>{n}</option>)}
+          {niches.map((n: string) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
         </select>
         {(q || nicheFilter) && (
-          <Button variant="ghost" size="sm" onClick={() => { setQ(""); setNicheFilter(""); }}>Limpar</Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setQ("");
+              setNicheFilter("");
+            }}
+          >
+            Limpar filtros
+          </Button>
         )}
       </div>
 
-      {/* Tabela */}
+      {/* Tabela de Follow-up */}
       <div className="panel overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-              <th className="px-4 py-3">Empresa</th>
+              <th className="px-4 py-3">Empresa / Contato</th>
               <th className="px-4 py-3">Nicho</th>
-              <th className="px-4 py-3">Último contato</th>
-              {tab === "late" && <th className="px-4 py-3">Atraso</th>}
-              <th className="px-4 py-3">Próximo contato</th>
-              <th className="px-4 py-3">Tentativas</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Canal preferencial</th>
-              <th className="px-4 py-3" />
+              <th className="px-4 py-3">Último contato</th>
+              {tab === "late" && <th className="px-4 py-3 text-red-600">Atraso</th>}
+              <th className="px-4 py-3">Próximo contato</th>
+              <th className="px-4 py-3 text-center">Tentativas</th>
+              <th className="px-4 py-3 text-center">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && <tr><td className="px-4 py-8 text-muted-foreground" colSpan={99}>Carregando...</td></tr>}
-            {!isLoading && filtered.length === 0 && (
-              <tr><td className="px-4 py-10 text-center text-muted-foreground" colSpan={99}>
-                {tab === "late" ? "Nenhum follow-up atrasado 🎉" : "Nenhum follow-up para este período."}
-              </td></tr>
-            )}
-            {filtered.map((c: any) => (
-              <tr key={c.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30">
-                <td className="px-4 py-3 font-medium text-foreground">
-                  {c.name}
-                  {c.whatsapp && <div className="text-xs text-muted-foreground">{c.whatsapp}</div>}
+            {isLoading && (
+              <tr>
+                <td className="px-4 py-12 text-center text-muted-foreground" colSpan={99}>
+                  Carregando lista de follow-up...
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{c.niche || "—"}</td>
-                <td className="px-4 py-3 text-muted-foreground">{fmtDate(c.last_attempted_at)}</td>
+              </tr>
+            )}
+
+            {!isLoading && filtered.length === 0 && (
+              <tr>
+                <td className="px-4 py-12 text-center text-muted-foreground" colSpan={99}>
+                  {tab === "late"
+                    ? "Nenhum follow-up atrasado! Parabéns 🎉"
+                    : tab === "today"
+                    ? "Nenhum follow-up pendente para hoje."
+                    : "Nenhuma empresa encontrada nesta categoria."}
+                </td>
+              </tr>
+            )}
+
+            {filtered.map((c: any) => (
+              <tr
+                key={c.id}
+                className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors"
+              >
+                {/* Nome & Telefone */}
+                <td className="px-4 py-3 font-medium text-foreground">
+                  <div>{c.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {formatPhoneDisplay(c.whatsapp || c.phone)}
+                  </div>
+                </td>
+
+                {/* Nicho */}
+                <td className="px-4 py-3 text-muted-foreground">
+                  {c.niche || "—"}
+                </td>
+
+                {/* Status */}
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-medium ${
+                      PROSPECTING_STATUS_COLORS[c.prospecting_status] || "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {PROSPECTING_STATUS_ICONS[c.prospecting_status] || "⚪"} {c.prospecting_status || "Sem status"}
+                  </span>
+                </td>
+
+                {/* Último contato */}
+                <td className="px-4 py-3 text-xs text-muted-foreground">
+                  {fmtDate(c.last_attempted_at)}
+                  {c.last_attempt_result && (
+                    <div className="text-[11px] text-muted-foreground/80 truncate max-w-[140px]">
+                      {c.last_attempt_result}
+                    </div>
+                  )}
+                </td>
+
+                {/* Atraso (apenas na aba de atrasados) */}
                 {tab === "late" && (
                   <td className="px-4 py-3">
-                    <span className="text-xs font-medium text-red-600">
-                      {daysSince(c.next_contact_at)}d atraso
+                    <span className="inline-flex items-center rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                      {daysSince(c.next_contact_at)}d de atraso
                     </span>
                   </td>
                 )}
-                <td className="px-4 py-3 text-muted-foreground">{fmtDate(c.next_contact_at)}</td>
-                <td className="px-4 py-3 text-center text-muted-foreground">{c.attempt_count || 0}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-medium ${PROSPECTING_STATUS_COLORS[c.prospecting_status] || ""}`}>
-                    {PROSPECTING_STATUS_ICONS[c.prospecting_status]} {c.prospecting_status}
-                  </span>
+
+                {/* Próximo contato */}
+                <td className="px-4 py-3 text-xs text-muted-foreground">
+                  {fmtDate(c.next_contact_at)}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{c.contact_channel || "—"}</td>
+
+                {/* Tentativas */}
+                <td className="px-4 py-3 text-center">
+                  <Badge variant="secondary" className="text-xs">
+                    {c.attempt_count || 0}
+                  </Badge>
+                </td>
+
+                {/* 6 Botões de Ação */}
                 <td className="px-4 py-3">
-                  <Button size="sm" onClick={() => setRegisterCompany(c)}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Registrar
-                  </Button>
+                  <FollowupActions
+                    company={c}
+                    onOpenScript={(comp) => setScriptCompany(comp)}
+                    onOpenRegister={(comp) => {
+                      setRegisterInitialMessage("");
+                      setRegisterCompany(comp);
+                    }}
+                    onOpenSchedule={(comp) => setScheduleCompany(comp)}
+                    onOpenHistory={(comp) => setHistoryCompany(comp)}
+                  />
                 </td>
               </tr>
             ))}
@@ -307,11 +319,47 @@ function FollowupProspeccao() {
         </table>
       </div>
 
+      {/* Modal 1: Script de Abordagem / Follow-up */}
+      {scriptCompany && (
+        <FollowupScriptModal
+          company={scriptCompany}
+          open={!!scriptCompany}
+          onClose={() => setScriptCompany(null)}
+          onOpenRegister={(msg) => {
+            setRegisterInitialMessage(msg);
+            setRegisterCompany(scriptCompany);
+          }}
+        />
+      )}
+
+      {/* Modal 2: Registrar Contato */}
       {registerCompany && (
-        <RegisterAttemptDialog
+        <ContactRegisterModal
           company={registerCompany}
+          initialMessage={registerInitialMessage}
           open={!!registerCompany}
-          onClose={() => setRegisterCompany(null)}
+          onClose={() => {
+            setRegisterCompany(null);
+            setRegisterInitialMessage("");
+          }}
+        />
+      )}
+
+      {/* Modal 3: Agendar Próximo Contato */}
+      {scheduleCompany && (
+        <ScheduleModal
+          company={scheduleCompany}
+          open={!!scheduleCompany}
+          onClose={() => setScheduleCompany(null)}
+        />
+      )}
+
+      {/* Modal 4: Histórico de Interações */}
+      {historyCompany && (
+        <HistoryModal
+          company={historyCompany}
+          open={!!historyCompany}
+          onClose={() => setHistoryCompany(null)}
         />
       )}
     </div>
